@@ -1,0 +1,35 @@
+---
+title: "Middlewares"
+description: "Pluggable hooks for modifying requests and responses"
+---
+
+Middlewares provide a way to inject custom logic into the request/response lifecycle. They can modify requests before they are sent, or process responses before they reach your spider.
+
+## Built-in Middlewares
+
+GoScrapy comes with several robust middlewares out of the box:
+
+- **Azure TLS**: Spoof TLS fingerprints to bypass bot detection.
+- **Dupefilter**: Filter out duplicate requests based on URL and method.
+- **Retry**: Automatically retry failed requests with exponential back-off.
+- **Stats**: Collect telemetry and metrics for the TUI dashboard.
+- **MultiCookieJar**: Maintain separate cookie sessions per target or proxy.
+
+## Custom Middleware
+
+To build a custom middleware, implement the `IMiddleware` interface.
+
+```go
+type IMiddleware interface {
+	ProcessRequest(context.Context, *core.Request) error
+	ProcessResponse(context.Context, *core.Request, core.IResponseReader) error
+}
+```
+
+Register it in your `settings.go`:
+
+```go
+var MIDDLEWARES = []middlewaremanager.Middleware{
+	myCustomMiddleware,
+}
+```
