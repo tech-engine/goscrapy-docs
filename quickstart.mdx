@@ -3,45 +3,66 @@ title: "Quickstart"
 description: "Begin with a guide on the fastest path to a successful outcome"
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+GoScrapy requires **Go 1.26** or higher.
 
 ## Get started
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Install GoScrapy CLI">
+    Install both `goscrapy` and the shorter `gos` alias tools.
 
     ```bash
-    npm install your-package
+    go install github.com/tech-engine/goscrapy/cmd/...@latest
+    ```
+
+    Verify installation:
+
+    ```bash
+    gos -v
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+  <Step title="Create a New Project">
+    Generate all necessary files for a new scraper project.
 
     ```bash
-    your-cli init
+    goscrapy startproject books_to_scrape
     ```
+
+    When prompted, accept to resolve dependencies (`go mod tidy`).
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+  <Step title="Explore the Code">
+    Your project is generated with best-practice scaffolding:
 
-    ```bash
-    your-cli start
-    ```
+    - `settings.go`: Configure pipelines and middlewares
+    - `base.go`: Engine setup (hide boilerplate)
+    - `spider.go`: Your parsing logic
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Example Spider
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Your `spider.go` (scaffolded by the CLI) remains clean and focused entirely on parsing.
+
+```go
+package myspider
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/tech-engine/goscrapy/pkg/core"
+)
+
+// Open is auto-called by goscrapy during engine startup
+func (s *Spider) Open(ctx context.Context) {
+	req := s.Request(ctx).Url("https://httpbin.org/get")
+	s.Parse(req, s.parse)
+}
+
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+	s.Logger().Infof("status: %d", resp.StatusCode())
+    // Process response ...
+}
+
+// Close is auto-called by goscrapy during engine shutdown
+func (s *Spider) Close(ctx context.Context) {}
+```

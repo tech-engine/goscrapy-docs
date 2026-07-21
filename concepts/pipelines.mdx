@@ -1,0 +1,38 @@
+---
+title: "Pipelines"
+description: "Export items yielded by your spiders"
+---
+
+Pipelines are responsible for processing and exporting the items yielded by your spiders.
+
+## Built-in Pipelines
+
+GoScrapy supports multiple export destinations out of the box:
+
+- **CSV**: Export records to a CSV file.
+- **JSON**: Export records to a JSON file.
+- **MongoDB**: Insert records directly into a MongoDB collection.
+- **Google Sheets**: Append records to a Google Sheet.
+- **Firebase**: Sync data to Firebase Realtime Database or Firestore.
+
+## Custom Pipelines
+
+To build a custom pipeline, implement the `IPipeline` interface:
+
+```go
+type IPipeline[OUT any] interface {
+	Open(context.Context) error
+	ProcessItem(IPipelineItem, core.IOutput[OUT]) error
+	Close()
+}
+```
+
+If you want to explicitly drop an item (e.g., due to validation failure), return `engine.ErrDropItem` from `ProcessItem`.
+
+Register it in your `settings.go`:
+
+```go
+var PIPELINES = []engine.IPipeline[*Record]{
+	myCustomPipeline,
+}
+```
