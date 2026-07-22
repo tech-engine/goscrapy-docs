@@ -3,9 +3,9 @@ title: "Requests & Responses"
 description: "Sending requests, passing metadata, and managing cookies"
 ---
 
-The `core.Request` object provides a fluent API for building HTTP requests.
+## Requests (`core.Request`)
 
-## Request Options
+A `core.Request` represents an HTTP request to be scheduled and executed by the engine. It provides a fluent, chainable API.
 
 ```go
 req := s.Request(ctx).
@@ -15,7 +15,7 @@ req := s.Request(ctx).
     AddHeader("Content-Type", "application/json")
 ```
 
-## Cookie Management
+### Cookie Management
 
 GoScrapy manages cookies seamlessly across requests using `CookieJar`.
 
@@ -24,6 +24,17 @@ req.CookieJar("session1")
 ```
 
 > \[!NOTE\] If you don't set a `CookieJar` key, it defaults to `""`. This means all requests without a specific key share a single global default cookie jar, maintaining session state automatically.
+
+## Responses (`core.IResponseReader`)
+
+An `IResponseReader` is passed to your callback functions. It provides access to the raw response and parsing utilities.
+
+**Available Methods:**
+
+- `resp.StatusCode()`: Returns the HTTP status code (int).
+- `resp.Bytes()`: Returns the raw response body as a byte slice.
+- `resp.Header()`: Access the `http.Header`.
+- `resp.Request()`: Returns the original `core.Request` that generated this response.
 
 ## Passing Metadata
 
@@ -34,6 +45,8 @@ You can pass data between callbacks using `Meta()`.
 req.Meta("category", "books")
 
 // In the next callback:
-val, _ := resp.Request().Meta_.Get("category")
-category := val.(string)
+val, ok := resp.Meta("category")
+if ok {
+    category := val.(string)
+}
 ```

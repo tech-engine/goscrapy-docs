@@ -3,34 +3,52 @@ title: "Your First Spider"
 description: "How to get your spider up and running quickly"
 ---
 
-Building a spider in GoScrapy is fast. The scaffolding provides the structure, you just provide the logic.
+You will spend most of your time in `spider.go` as this is where the entire scraping logic lives. Building a spider in GoScrapy is fast and straightforward.
 
-## Lifecycle Methods
+## Triggering the Spider
 
-Your spider automatically connects to the engine if it implements these methods:
+There are two primary ways to kick off your scraping process:
 
-- `Open(ctx context.Context)`: Called when the engine starts. Use it to yield your initial requests.
+### 1. Directly from `main.go`
+
+This is the most common pattern for simple scripts or when you need to pass specific job arguments (like CLI flags).
+
+```go
+// In main.go
+spider, _ := my_project.New(ctx)
+spider.StartRequests(ctx)
+spider.Wait(true)
+
+// In spider.go
+func (s *Spider) StartRequests(ctx context.Context) {
+    s.Parse(s.Request(ctx).Url(s.baseUrl), s.parse)
+}
+```
+
+### 2. Using Lifecycle Methods
+
+Your spider automatically connects to the engine if it implements these methods.
+
+- `Open(ctx context.Context)`: Called when the engine starts. Perfect for yielding initial requests automatically.
 - `Close(ctx context.Context)`: Called when the engine stops.
 - `Idle(ctx context.Context)`: Called when there is no active work.
 
-## Quick Example
+<Accordion title="Advanced: The 'parse' method">
+  The `parse` method (or whatever you name your callback) is where you process the `IResponseReader`.
 
-In your `spider.go`:
-
-```go
-func (s *Spider) Open(ctx context.Context) {
-    // 1. Create a request
-    req := s.Request(ctx).Url("https://example.com")
-    
-    // 2. Schedule it with a callback
-    s.Parse(req, s.parse)
-}
-
-func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-    // 3. Extract data
-    title := resp.Css("title").Text()
-    
-    // 4. Yield the record to pipelines
-    s.Yield(&Record{Title: title})
-}
-```
+  ```go
+  func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+      // 1. Extract data (using selectors or Gosm)
+      var record Record
+      gosm.Map(resp, &record)
+      
+      // 2. Yield the record to the pipelines
+      s.Yield(&record)
+      
+      // 3. Follow pagination
+      for _, nextUrl := range resp.Css("li.next a").Attr("href") {
+          s.Parse(s.Request(ctx).Url(nextUrl), s.parse)
+      }
+  }
+  ```
+</Accordion>

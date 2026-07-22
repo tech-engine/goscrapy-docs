@@ -3,40 +3,50 @@ title: "Declarative Mapping"
 description: "Extract data automatically using Struct Tags"
 ---
 
-Writing imperative code to manually parse deeply nested HTML elements can quickly become a painful and unmaintainable mess. **Gosm** is GoScrapy's declarative mapping engine that saves you from this headache by letting you define your data model using struct tags.
+Writing imperative code to manually parse HTML can become unmaintainable. **Gosm** is GoScrapy's declarative mapping engine that lets you define extraction rules using struct tags.
 
-It automatically traverses nested JSON arrays, CSS, and XPath selectors to populate your records in a single line of code.
+### Scenario 1: Basic HTML & Attributes
 
-## The Power of Gosm
-
-Whether you're dealing with deeply nested structures or complex HTML, Gosm handles the heavy lifting recursively.
+You can map CSS and XPath selectors directly to struct fields. Use `@` to target specific attributes.
 
 ```go
 type Record struct {
-    // Extract from JSON path 
-    Title    string   `gos:"0.1.title" json:"title" csv:"title"` 
+    Title    string `gos_css:".product_main h1"`
+    Price    string `gos_css:".price_color"`
     
-    // Extract from HTML using CSS or XPath
-    Price    float64  `gos_css:".price_color" json:"price" csv:"price"`
-    InStock  bool     `gos_xpath:"//p[@class='instock availability']" json:"in_stock" csv:"in_stock"`
-    
-    // Extract attributes using @attr syntax
-    ImageURL string   `gos_css:"img.thumbnail@src" json:"image_url" csv:"image_url"`
-    Link     string   `gos_xpath:"//a[@class='title']@href" json:"link" csv:"link"`
-    
-    // Recursive mapping for nested structures without imperative code
-    Authors  []Author `gos:"authors" json:"authors" csv:"authors"` 
+    // Extracting an attribute
+    Rating   string `gos_css:".star-rating@class"`
+    NextPage string `gos_css:"li.next a@href"`
 }
- 
-type Author struct {
-    Name string `gos:"name"`
-}
- 
+
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-    var book Record
-    // One line to map EVERYTHING
-    _ = gosm.Map(resp, &book) 
-    
-    s.Yield(&book)
+    var record Record
+    _ = gosm.Map(resp, &record) 
+}
+```
+
+### Scenario 2: JSON Extraction
+
+If you're dealing with JSON responses, use the `gos` tag with dot-notation to navigate the JSON path.
+
+```go
+type APIResponse struct {
+    ProductName string `gos:"data.0.title"`
+    Price       int    `gos:"data.0.metrics.price"`
+}
+```
+
+### Scenario 3: Deeply Nested Structures
+
+Gosm handles recursion automatically. If a page has a list of items, you can map them to a slice of structs without writing imperative loops.
+
+```go
+type Page struct {
+    Products []Product `gos_css:"article.product_pod"`
+}
+
+type Product struct {
+    Title string `gos_css:"h3 a@title"`
+    Price string `gos_css:".price_color"`
 }
 ```

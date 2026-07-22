@@ -1,0 +1,30 @@
+---
+title: "Example Projects"
+description: "Learn GoScrapy through real-world examples"
+---
+
+GoScrapy comes with several fully functional example projects located in the `_examples` directory of the repository. These examples demonstrate various features and use-cases.
+
+### 1. Standard Extraction
+
+- **`books.toscrape.com`**: The quintessential scraping example. Demonstrates pagination, CSS/XPath extraction, and basic pipeline usage.
+
+### 2. Advanced Handling
+
+- **`scrapejsp` & `scrapejsp_method2`**: Demonstrates how to handle JS-heavy or JSP pages that require maintaining complex session state or simulating XHR requests.
+- **`fingerprint_spoofing`**: Shows how to use the Azure TLS middleware to bypass advanced bot protection and WAFs.
+
+### 3. Real-World Targets
+
+- **`google_finance`**: Extracts stock data and metrics.
+- **`google_maps_scraper`**: Extracts location data, reviews, and ratings.
+
+### 4. Architecture & Scale
+
+- **`distributed_scraping`**: Demonstrates how to scale GoScrapy horizontally using message queues or external schedulers.
+- **`use_signals`**: Shows how to wire up event listeners for metrics, alerting, or graceful shutdowns.
+
+### 5. Tooling
+
+- **`tuner`**: Examples on performance tuning and tweaking the Worker Pool.
+- **`with_tui_stats`**: Demonstrates how to integrate GoScrapy's telemetry with Bubble Tea for a beautiful Terminal UI.

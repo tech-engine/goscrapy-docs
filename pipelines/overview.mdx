@@ -3,4 +3,13 @@ title: "Overview"
 description: "Understanding Pipelines in GoScrapy"
 ---
 
-Pipelines are responsible for processing and exporting the items yielded by your spiders. When you call `s.Yield(record)`, the engine pushes the record into the Pipeline Manager, which passes it through all configured pipelines sequentially.
+Pipelines are responsible for processing and exporting the items yielded by your spiders.
+
+When you call `s.Yield(record)`, the engine pushes the record into the Pipeline Manager, which passes it through all configured pipelines sequentially.
+
+Pipelines are typically used for:
+
+- Cleansing HTML data.
+- Validating scraped data (checking that the items contain certain fields).
+- Checking for duplicates (and dropping them).
+- Storing the scraped item in a database, file, or cloud storage.

@@ -3,23 +3,50 @@ title: "Parsing HTML"
 description: "Extract data using CSS and XPath selectors"
 ---
 
-The `IResponseReader` provides chainable methods for querying HTML using CSS and XPath.
+The `IResponseReader` provides chainable methods for querying HTML using CSS and XPath. Here are examples covering common scenarios.
 
 ## Using CSS Selectors
+
+### 1. Extracting Text
 
 ```go
 // Get the text of the first H1
 title := resp.Css("h1").Text()
 
+// Get multiple elements (returns a slice)
+prices := resp.Css("article.product_pod .price_color").Text()
+```
+
+### 2. Extracting Attributes
+
+```go
 // Get the href attribute of a link
 link := resp.Css("a.product-link").Attr("href")
+
+// Loop through multiple links
+for _, productUrl := range resp.Css("article.product_pod h3 a").Attr("href") {
+    // Follow links
+}
+```
+
+### 3. Advanced Targeting
+
+```go
+// Nth-child targeting
+upc := resp.Css("table tr:nth-child(1) td").Text()
+
+// Sibling targeting (e.g., getting the element right after a specific ID)
+description := resp.Css("#product_description + *").Text()
 ```
 
 ## Using XPath Selectors
 
 ```go
-// Get price
+// Get text by class
 price := resp.Xpath("//p[@class='price_color']").Text()
-```
 
-If you prefer to extract data automatically without writing imperative code, check out [Declarative Mapping](/concepts/declarative-mapping).
+// Check if an element exists
+if stocks := resp.Xpath("//p[@class='instock availability']").Text(); len(stocks) > 0 {
+    // Process stock
+}
+```
