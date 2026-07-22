@@ -1,0 +1,50 @@
+---
+title: "Environment Settings"
+description: "Configuring GoScrapy via settings.go"
+---
+
+GoScrapy's engine and built-in components expose various tuning parameters via environment variables. By convention, these are initialized inside the `settings.go` file using `os.Setenv()`, allowing you to override them per-project while keeping defaults visible.
+
+## Engine & Concurrency Settings
+
+These settings dictate how aggressively GoScrapy spawns goroutines to handle concurrent scraping workloads.
+
+| Variable | Description | Default |
+| :-- | :-- | :-- |
+| `AUTOSCALER_MAX_WORKERS` | The absolute maximum number of concurrent workers (goroutines) the engine is allowed to spawn during high load. | `50` |
+| `AUTOSCALER_MIN_WORKERS` | The minimum number of workers the engine will keep alive at all times. | `10` |
+| `AUTOSCALER_SCALING_FACTOR` | Controls how aggressively the autoscaler reacts to queue sizes (advanced). Higher numbers mean faster scaling. | `2.0` |
+| `POOL_MAX_DRAIN_BYTES` | Maximum buffer size (in bytes) to read from a response body when draining connections to prevent memory exhaustion. | `1MB` (1048576) |
+| `SCHEDULER_WORK_QUEUE_SIZE` | The buffer size of the engine's internal request scheduling queue. | `1024` |
+| `ENGINE_RESULT_HANDLERS` | Number of concurrent goroutines dedicated to pushing items to Pipelines. | `Runtime NumCPU()` |
+
+## HTTP Client & Middleware Settings
+
+These settings control the default HTTP client's behavior and the built-in `Retry` middleware. If you explicitly use `app.WithClient(gos.DefaultClient(options...))`, those options take precedence.
+
+| Variable | Description | Default |
+| :-- | :-- | :-- |
+| `MIDDLEWARE_HTTP_TIMEOUT_MS` | Default HTTP client timeout in milliseconds. | `10000` (10s) |
+| `MIDDLEWARE_HTTP_MAX_IDLE_CONN` | Global max idle (keep-alive) connections across all hosts. | `100` |
+| `MIDDLEWARE_HTTP_MAX_CONN_PER_HOST` | Maximum total connections (active \+ idle) allowed per individual host. | `100` |
+| `MIDDLEWARE_HTTP_MAX_IDLE_CONN_PER_HOST` | Maximum idle connections allowed per individual host. | `100` |
+| `PROXY_LIST` | A comma-separated list of proxy URLs (e.g., `http://proxy1,http://proxy2`). | `""` |
+| `MIDDLEWARE_HTTP_RETRY_MAX_RETRIES` | Max attempts the Retry middleware will make before dropping a request. | `3` |
+| `MIDDLEWARE_HTTP_RETRY_CODES` | Comma-separated list of HTTP status codes that trigger a retry. | `500,502,503,504,429` |
+| `MIDDLEWARE_HTTP_RETRY_BASE_DELAY` | Base backoff delay in milliseconds before the first retry. | `2000` (2s) |
+
+## Pipeline Manager Settings
+
+These settings control how the engine buffers data before pushing it through your pipelines.
+
+| Variable | Description | Default |
+| :-- | :-- | :-- |
+| `PIPELINEMANAGER_ITEM_SIZE` | Initial memory capacity allocated for holding an item in the pipeline queue. | `1024` |
+| `PIPELINEMANAGER_OUTPUT_QUEUE_BUF_SIZE` | Buffer size of the internal channel passing items to the pipeline manager. | `1024` |
+| `PIPELINEMANAGER_MAX_PROCESS_ITEM_CONCURRENCY` | Limits how many items can be processed by pipelines concurrently. | `50` |
+
+## Logging Settings
+
+| Variable | Description | Default |
+| :-- | :-- | :-- |
+| `GOS_LOG_LEVEL` | Controls the verbosity of the internal logger. Accepts `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`. | `INFO` |

@@ -34,7 +34,9 @@
           "architecture",
           "concepts/request-response",
           "concepts/selectors",
-          "concepts/declarative-mapping"
+          "concepts/declarative-mapping",
+          "concepts/client",
+          "concepts/settings"
         ]
       },
       {
@@ -50,7 +52,8 @@
         "pages": [
           "pipelines/overview",
           "pipelines/inbuilt",
-          "pipelines/custom"
+          "pipelines/custom",
+          "pipelines/groups"
         ]
       },
       {

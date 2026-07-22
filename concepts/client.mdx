@@ -1,0 +1,74 @@
+---
+title: "Customizing the HTTP Client"
+description: "How to configure GoScrapy's default HTTP client"
+---
+
+GoScrapy uses a highly optimized `http.Client` under the hood. While the defaults are suitable for most workloads, you can customize it by passing options to `gos.DefaultClient()` and injecting it into the engine during setup.
+
+## Available Options
+
+| Option | Description | Default |
+| :-- | :-- | :-- |
+| `WithProxies` | Accepts multiple proxy URL strings. GoScrapy will automatically round-robin through them. | Reads from `PROXY_LIST` env var |
+| `WithTimeout` | Total HTTP client timeout. | `10s` (or `MIDDLEWARE_HTTP_TIMEOUT_MS`) |
+| `WithMaxIdleConns` | Controls the max number of idle (keep-alive) connections across all hosts. 0 means unlimited. | `100` (or `MIDDLEWARE_HTTP_MAX_IDLE_CONN`) |
+| `WithMaxIdleConnsPerHost` | Same as `WithMaxIdleConns`, but limits per individual host. | `100` (or `MIDDLEWARE_HTTP_MAX_IDLE_CONN_PER_HOST`) |
+| `WithMaxConnsPerHost` | Limits the total number of connections (active \+ idle) per host. 0 means unlimited. | `100` (or `MIDDLEWARE_HTTP_MAX_CONN_PER_HOST`) |
+| `WithProxyFn` | Accepts a custom proxy function for the HTTP transport. | Round robin (if proxies provided) |
+
+## Example: Customizing the Client
+
+You wire the custom client inside `base.go` when initializing the engine:
+
+```go
+package my_spider
+
+import (
+    "context"
+    "net/http"
+    "net/url"
+    "github.com/tech-engine/goscrapy/pkg/gos"
+)
+
+func New(ctx context.Context) (*Spider, error) {
+    // 1. Define your client options
+    proxies := gos.WithProxies("http://proxy1.com:8080", "http://proxy2.com:8080")
+    timeout := gos.WithTimeout(15) // 15 seconds
+    
+    // 2. Initialize the core engine
+    app, err := gos.New[*Record]()
+    if err != nil {
+        return nil, err
+    }
+
+    // 3. Inject the customized default client
+    app.WithClient(gos.DefaultClient(proxies, timeout))
+
+    spider := &Spider{ICoreSpider: app}
+    app.RegisterSpider(spider)
+    
+    // ...
+    return spider, nil
+}
+```
+
+## Example: Custom Proxy Function
+
+If you need advanced proxy routing (e.g., dynamically resolving proxies per-request based on headers or URLs), you can provide a custom `WithProxyFn`:
+
+```go
+func customProxyRoute(req *http.Request) (*url.URL, error) {
+    // Route to proxyA if the request URL contains "api"
+    if strings.Contains(req.URL.String(), "/api/") {
+        return url.Parse("http://proxyA.com:8080")
+    }
+    
+    // Otherwise, route to proxyB
+    return url.Parse("http://proxyB.com:8080")
+}
+
+// In base.go:
+app.WithClient(gos.DefaultClient(
+    gos.WithProxyFn(customProxyRoute),
+))
+```
