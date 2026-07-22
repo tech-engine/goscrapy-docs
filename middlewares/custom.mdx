@@ -9,7 +9,7 @@ A middleware in GoScrapy is a function that wraps an `http.RoundTripper`. You cr
 
 Use `middlewaremanager.MiddlewareFunc` to wrap your logic:
 
-```go
+```go middlewares/logging.go
 package middlewares
 
 import (
@@ -39,7 +39,7 @@ func LoggingMiddleware(next http.RoundTripper) http.RoundTripper {
 
 Add it to the `MIDDLEWARES` slice in your `settings.go`:
 
-```go
+```go settings.go
 var MIDDLEWARES = []middlewaremanager.Middleware{
     LoggingMiddleware,          // your custom middleware
     middlewares.Retry(),        // built-in retry

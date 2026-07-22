@@ -7,7 +7,7 @@ description: "Sending requests, passing metadata, and managing cookies"
 
 A `core.Request` represents an HTTP request to be scheduled and executed by the engine. You create one using `s.Request(ctx)` and configure it with a fluent, chainable API.
 
-```go
+```go spider.go
 req := s.Request(ctx).
     Url("https://httpbin.org/post").
     Method("POST").
@@ -35,7 +35,7 @@ req := s.Request(ctx).
 
 ### Cookie Management
 
-```go
+```go spider.go
 req.CookieJar("session1")
 ```
 
@@ -66,7 +66,7 @@ An `IResponseReader` is passed to your callback functions. It provides access to
 
 You can pass arbitrary data between callbacks using `Meta()` on the request and response.
 
-```go
+```go spider.go
 // When creating the request:
 req := s.Request(ctx).Url(nextUrl).Meta("category", "books")
 s.Parse(req, s.parseDetail)

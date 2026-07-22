@@ -7,7 +7,7 @@ When you run `goscrapy startproject <project_name>`, GoScrapy generates a struct
 
 ## Directory Structure
 
-```text
+```text Project structure
 <project_name>/
 ├── main.go                  # Entry point
 └── <project_name>/          # Spider package
@@ -27,7 +27,7 @@ When you run `goscrapy startproject <project_name>`, GoScrapy generates a struct
 
 The entry point. Initializes the spider, creates a context, calls `StartRequests()`, and waits for the engine to complete.
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()

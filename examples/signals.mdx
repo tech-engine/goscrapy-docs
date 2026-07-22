@@ -13,7 +13,7 @@ This example demonstrates the full power of GoScrapy's signal system, including 
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -30,7 +30,7 @@ func main() {
 
 ## base.go (Signal Wiring)
 
-```go
+```go base.go
 func New(ctx context.Context) (*Spider, error) {
     app, _ := gos.New[*Record]()
     app.WithMiddlewares(MIDDLEWARES...).WithPipelines(PIPELINES...)
@@ -63,7 +63,7 @@ func New(ctx context.Context) (*Spider, error) {
 
 ## spider.go (Lifecycle Hooks \+ Signal Handlers)
 
-```go
+```go spider.go
 // Auto-discovered lifecycle hooks
 func (s *Spider) Open(ctx context.Context) {
     log.Println("[spider hook] open called")
@@ -104,7 +104,7 @@ func (s *Spider) onItemDropped(ctx context.Context, item *Record, err error) {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/use_signals
 go run main.go
 ```

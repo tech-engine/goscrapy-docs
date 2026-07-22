@@ -12,7 +12,7 @@ This example demonstrates how to use the `AzureTLS` middleware to spoof TLS fing
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -28,7 +28,7 @@ func main() {
 
 ## settings.go
 
-```go
+```go settings.go
 var azureTLSOpts = &middlewares.AzureTLSOptions{
     Browser: "firefox",
 }
@@ -43,7 +43,7 @@ var MIDDLEWARES = []middlewaremanager.Middleware{
 
 ## spider.go (Per-Request Override)
 
-```go
+```go spider.go
 func (s *Spider) Open(ctx context.Context) {
     // Override TLS options per-request via context
     ctx = middlewares.WithAzureTLSOptions(ctx, &middlewares.AzureTLSOptions{
@@ -62,7 +62,7 @@ func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/fingerprint_spoofing
 go run main.go
 ```

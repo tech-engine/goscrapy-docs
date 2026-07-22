@@ -12,7 +12,7 @@ This example (`scrapejsp`) demonstrates how to scrape a JSON API endpoint instea
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -29,7 +29,7 @@ func main() {
 
 ## spider.go
 
-```go
+```go spider.go
 func (s *Spider) Open(ctx context.Context) {
     req := s.Request(ctx).Url("https://jsonplaceholder.typicode.com/todos/1")
     s.Parse(req, s.parse)
@@ -52,7 +52,7 @@ func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/scrapejsp
 go run main.go
 ```

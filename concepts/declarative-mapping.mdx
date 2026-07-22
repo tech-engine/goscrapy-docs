@@ -21,7 +21,7 @@ Use the `@attr` suffix to extract an attribute instead of inner text (e.g., `gos
 
 Map CSS selectors directly to struct fields. Add `json` and `csv` tags for pipeline exports.
 
-```go
+```go record.go
 type Record struct {
     Title       string `gos_css:".product_main h1" json:"title" csv:"title"`
     Price       string `gos_css:".price_color" json:"price" csv:"price"`
@@ -33,7 +33,7 @@ type Record struct {
 
 Append `@attr_name` to the selector to extract an attribute instead of text.
 
-```go
+```go record.go
 type Record struct {
     // Extract the 'class' attribute (e.g., "star-rating Three")
     Rating   string `gos_css:".star-rating@class"`
@@ -50,7 +50,7 @@ type Record struct {
 
 Use a `[]string` field to capture all matching elements at once.
 
-```go
+```go spider.go
 type Listing struct {
     ProductLinks []string `gos_css:"article.product_pod h3 a@href"`
     NextPage     string   `gos_css:"li.next a@href"`
@@ -70,7 +70,7 @@ func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
 
 For JSON API responses, use `gos` with dot-notation to navigate nested paths. Array indices are supported.
 
-```go
+```go record.go
 type APIResponse struct {
     // Navigate: {"data": [{"title": "..."}]}
     ProductName string `gos:"data.0.title"`
@@ -80,7 +80,7 @@ type APIResponse struct {
 
 ## Usage
 
-```go
+```go spider.go
 func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
     record := &Record{}
     _ = gosm.Map(resp, record)

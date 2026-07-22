@@ -7,7 +7,7 @@ description: "How to build your own custom pipeline"
 
 GoScrapy provides a built-in command to scaffold a custom pipeline:
 
-```bash
+```bash Terminal
 goscrapy pipeline my_validator
 ```
 
@@ -17,7 +17,7 @@ This creates `pipelines/my_validator.go` with all three required methods stubbed
 
 The scaffolded pipeline looks like this:
 
-```go
+```go pipelines/my_validator.go
 package pipelines
 
 import (
@@ -54,7 +54,7 @@ func (p *MyValidator[OUT]) ProcessItem(item engine.IPipelineItem, original core.
 
 Return `engine.ErrDropItem` from `ProcessItem` to silently drop an item. It will not be passed to subsequent pipelines.
 
-```go
+```go pipelines/my_validator.go
 func (p *MyValidator[OUT]) ProcessItem(item engine.IPipelineItem, out core.IOutput[*Record]) error {
     record := out.Record()
     if record.Title == "" {
@@ -68,7 +68,7 @@ func (p *MyValidator[OUT]) ProcessItem(item engine.IPipelineItem, out core.IOutp
 
 Add it to `settings.go`. Pipelines run in order, so place validation pipelines **before** export pipelines:
 
-```go
+```go settings.go
 var PIPELINES = []engine.IPipeline[*Record]{
     pipelines.New[*Record](), // validation first
     export2CSV,               // export only valid items

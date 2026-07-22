@@ -14,7 +14,7 @@ This example scrapes Google Maps search results including geocoding, business li
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -35,7 +35,7 @@ func main() {
 
 ## spider.go
 
-```go
+```go spider.go
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     if job.loc == nil {
         // Step 1: Geocode the query to get lat/lng
@@ -76,7 +76,7 @@ func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader)
 
 The heavy lifting happens in `utils.go`:
 
-```go
+```go utils.go
 // ExtractMapResults parses Google Maps' raw JSON response
 func ExtractMapResults(data []byte) []Record {
     body := bytes.TrimPrefix(data, []byte(")]}'")
@@ -120,7 +120,7 @@ func getJob(resp core.IResponseReader) (Job, bool) {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/google_maps_scraper
 go run main.go
 ```

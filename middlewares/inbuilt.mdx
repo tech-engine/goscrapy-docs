@@ -9,7 +9,7 @@ GoScrapy comes with several robust middlewares out of the box. You can configure
 
 Automatically retries failed requests or specific status codes with exponential back-off.
 
-```go
+```go settings.go
 retryMiddleware := middlewares.Retry(middlewares.RetryOpts{
     MaxRetries: 3,
     Codes:      []uint16{500, 502, 503, 504, 522, 524, 408, 429},
@@ -21,7 +21,7 @@ retryMiddleware := middlewares.Retry(middlewares.RetryOpts{
 
 Filters out duplicate requests based on the URL and HTTP method.
 
-```go
+```go settings.go
 dupefilterMiddleware := middlewares.DupeFilter()
 ```
 
@@ -29,7 +29,7 @@ dupefilterMiddleware := middlewares.DupeFilter()
 
 Maintains separate cookie sessions. It automatically uses the `CookieJarKey` set on the request.
 
-```go
+```go settings.go
 cookieMiddleware := middlewares.MultiCookieJar
 ```
 

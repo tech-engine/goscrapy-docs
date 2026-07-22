@@ -13,7 +13,7 @@ This example scrapes [books.toscrape.com](https://books.toscrape.com), extractin
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -31,7 +31,7 @@ func main() {
 
 ## spider.go
 
-```go
+```go spider.go
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
     var list Listing
     _ = gosm.Map(resp, &list)
@@ -66,7 +66,7 @@ func (s *Spider) StartRequests(ctx context.Context) {
 
 ## record.go (Gosm Tags)
 
-```go
+```go record.go
 type Record struct {
     J           *Job   `json:"-" csv:"-"`
     Title       string `json:"title" csv:"title" gos_css:".product_main h1"`
@@ -84,7 +84,7 @@ type Listing struct {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/books.toscrape.com
 go run main.go
 ```

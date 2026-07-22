@@ -9,7 +9,7 @@ Pipelines process and export the items yielded by your spider. When you call `s.
 
 Every pipeline must implement these three methods:
 
-```go
+```go IPipeline interface
 type IPipeline[OUT any] interface {
     Open(context.Context) error
     ProcessItem(IPipelineItem, core.IOutput[OUT]) error

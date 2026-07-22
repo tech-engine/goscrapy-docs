@@ -13,7 +13,7 @@ This example demonstrates how to distribute GoScrapy's workload across multiple 
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -33,7 +33,7 @@ func main() {
 
 The key to distribution is passing a custom `TaskQueue` to `gos.New()`:
 
-```go
+```go base.go
 func New(ctx context.Context) (*Spider, error) {
     // Create the Redis-backed Task Queue
     redisQueue := NewRedisTaskQueue(RedisOptions{
@@ -55,7 +55,7 @@ func New(ctx context.Context) (*Spider, error) {
 
 This is the core of the distributed architecture. It implements `scheduler.ITaskQueue` using Redis lists and sorted sets with Lua scripts for atomicity:
 
-```go
+```go redis_queue.go
 type redisTaskQueue struct {
     client            *redis.Client
     queueKey          string     // main work queue (Redis List)
@@ -98,7 +98,7 @@ A background **reaper goroutine** recovers orphaned tasks (tasks that exceeded t
 
 Ensure Redis is running, then:
 
-```bash
+```bash Terminal
 cd _examples/distributed_scraping
 go run main.go
 ```

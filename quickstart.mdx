@@ -11,20 +11,20 @@ GoScrapy requires **Go 1.26** or higher.
   <Step title="Install GoScrapy CLI">
     Install both `goscrapy` and the shorter `gos` alias tools.
 
-    ```bash
+    ```bash Terminal
     go install github.com/tech-engine/goscrapy/cmd/...@latest
     ```
 
     Verify installation:
 
-    ```bash
+    ```bash Terminal
     gos -v
     ```
   </Step>
   <Step title="Create a New Project">
     Generate all necessary files for a new scraper project.
 
-    ```bash
+    ```bash Terminal
     goscrapy startproject my_scraper
     ```
 
@@ -33,7 +33,7 @@ GoScrapy requires **Go 1.26** or higher.
   <Step title="Write Your Parsing Logic">
     Open `my_scraper/spider.go` and add a `StartRequests` method to seed the initial URL:
 
-    ```go
+    ```go spider.go
     func (s *Spider) StartRequests(ctx context.Context) {
         req := s.Request(ctx).Url("https://books.toscrape.com")
         s.Parse(req, s.parse)
@@ -48,7 +48,7 @@ GoScrapy requires **Go 1.26** or higher.
   <Step title="Run Your Spider">
     From the project root directory:
 
-    ```bash
+    ```bash Terminal
     go run main.go
     ```
 

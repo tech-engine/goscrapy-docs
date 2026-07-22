@@ -13,7 +13,7 @@ This example integrates GoScrapy's telemetry system with a Bubble Tea-based term
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -32,7 +32,7 @@ func main() {
 
 This is the key file. The TUI is wired in `New()` by creating a `TelemetryHub`, adding a `StatsCollector`, and attaching the `tui.Dashboard` as an observer:
 
-```go
+```go base.go
 func New(ctx context.Context, tuiEnabled bool) (*Spider, error) {
     app, err := gos.New[*Record]()
     // ...
@@ -74,7 +74,7 @@ func New(ctx context.Context, tuiEnabled bool) (*Spider, error) {
 
 ## settings.go
 
-```go
+```go settings.go
 // The Stats middleware collects request/response metrics
 var HttpStats = middlewares.NewStatsCollector()
 
@@ -88,7 +88,7 @@ var MIDDLEWARES = []middlewaremanager.Middleware{
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/with_tui_stats
 go run main.go
 ```

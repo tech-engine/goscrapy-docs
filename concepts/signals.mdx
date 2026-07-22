@@ -9,7 +9,7 @@ Signals are an event-driven system that lets you hook into the engine's lifecycl
 
 Signals are typically wired in `base.go`, right after calling `gos.New()` and before `app.RegisterSpider(spider)`. They use a fluent builder pattern with full compile-time type safety.
 
-```go
+```go base.go
 // In base.go
 func New(ctx context.Context) (*Spider, error) {
     app, _ := gos.New[*Record]()

@@ -9,7 +9,7 @@ GoScrapy supports multiple export destinations out of the box. Configure them in
 
 Exports records to a CSV file. It automatically marshals the struct tags defined in your `record.go`.
 
-```go
+```go settings.go
 export2CSV := csv.New[*Record](csv.Options{
 	Filename: "output.csv",
 })
@@ -19,7 +19,7 @@ export2CSV := csv.New[*Record](csv.Options{
 
 Exports records to a JSON file or stream.
 
-```go
+```go settings.go
 export2JSON := json.New[*Record](json.Options{
 	Filename: "output.json",
 })

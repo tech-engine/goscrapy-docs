@@ -20,7 +20,7 @@ The `IResponseReader` embeds `ISelector`, providing chainable methods for queryi
 
 ### Extracting Text
 
-```go
+```go spider.go
 // Single element
 titles := resp.Css(".product_main h1").Text()
 if len(titles) > 0 {
@@ -33,7 +33,7 @@ prices := resp.Css("article.product_pod .price_color").Text()
 
 ### Extracting Attributes
 
-```go
+```go spider.go
 // Get href from links
 for _, productUrl := range resp.Css("article.product_pod h3 a").Attr("href") {
     s.Parse(s.Request(ctx).Url(productUrl), s.parseProduct)
@@ -47,7 +47,7 @@ titles := resp.Css("article.product_pod h3 a").Attr("title")
 
 You can scope your selectors by chaining `.Css()` calls, narrowing the search context:
 
-```go
+```go spider.go
 // First, scope to the product page container
 product := resp.Css("article.product_page")
 
@@ -59,7 +59,7 @@ rating := product.Css(".star-rating").Attr("class")
 
 ### Advanced CSS Targeting
 
-```go
+```go spider.go
 // Nth-child targeting for table data
 upc := resp.Css("table tr:nth-child(1) td").Text()
 productType := resp.Css("table tr:nth-child(2) td").Text()
@@ -73,7 +73,7 @@ description := resp.Css("#product_description + *").Text()
 
 Since `.Text()` and `.Attr()` return slices, always check length before accessing:
 
-```go
+```go spider.go
 var stock string
 if stocks := resp.Css(".availability").Text(); len(stocks) > 0 {
     stock = strings.TrimSpace(stocks[0])
@@ -82,7 +82,7 @@ if stocks := resp.Css(".availability").Text(); len(stocks) > 0 {
 
 ## XPath Examples
 
-```go
+```go spider.go
 price := resp.Xpath("//p[@class='price_color']").Text()
 inStock := resp.Xpath("//p[@class='instock availability']").Text()
 ```

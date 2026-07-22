@@ -14,7 +14,7 @@ This example demonstrates a real-world advanced pattern: reverse-engineering Goo
 
 ## main.go
 
-```go
+```go main.go
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
@@ -34,7 +34,7 @@ func main() {
 
 ## spider.go
 
-```go
+```go spider.go
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     ticker := job.Query()
     body, rpcids := buildBatchRequest(ticker)
@@ -74,7 +74,7 @@ func (s *Spider) parseResponse(ctx context.Context, resp core.IResponseReader) {
 
 The utils file contains the core parsing logic for Google's custom batch RPC format:
 
-```go
+```go utils.go
 // buildBatchRequest constructs the hex-delimited JSON body for Google Finance RPC calls
 func buildBatchRequest(ticker string) (string, string) { ... }
 
@@ -94,7 +94,7 @@ func mapCompany(raw gjson.Result, record *Record) {
 
 ## Running
 
-```bash
+```bash Terminal
 cd _examples/google_finance
 go run main.go
 ```
