@@ -124,7 +124,7 @@
       "keywords": "go, golang, scraping, web scraper, crawler, framework, scrapy alternative, data extraction, spider",
       "author": "Tech Engine",
       "canonical": "https://goscrapy.com",
-      "theme": "#2563EB"
+      "theme-color": "#2563EB"
     }
   }
 }
