@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
+  "theme": "mint",
   "name": "GoScrapy",
   "colors": {
     "primary": "#2563EB",
@@ -110,5 +110,8 @@
       "discord": "https://discord.gg/FPvxETjYPH"
     }
   },
-  "description": "GoScrapy is high performance yet lightweight webscraping framework in go bringing the experience of python's Scrapy in go."
+  "description": "GoScrapy is high performance yet lightweight webscraping framework in go bringing the experience of python's Scrapy in go.",
+  "background": {
+    "decoration": "gradient"
+  }
 }
