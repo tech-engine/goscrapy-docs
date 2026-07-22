@@ -129,5 +129,8 @@
       "canonical": "https://goscrapy.com",
       "theme-color": "#2563EB"
     }
+  },
+  "styling": {
+    "codeblocks": "dark"
   }
 }
