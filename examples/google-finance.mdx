@@ -3,22 +3,43 @@ title: "Google Finance"
 description: "Reverse-engineering Google's RPC API for stock data"
 ---
 
-This example demonstrates a real-world advanced scraping pattern: reverse-engineering Google Finance's internal batch RPC API to extract stock quotes, company info, chart data, and news.
+This example demonstrates a real-world advanced pattern: reverse-engineering Google Finance's internal batch RPC API to extract stock quotes, company info, chart data, and news.
 
 **Key concepts demonstrated:**
 
 - POST requests with custom headers and body
-- Passing metadata between callbacks (`Meta("ticker", ticker)`)
-- Parsing non-HTML responses (raw RPC batch format)
+- Passing metadata between callbacks using `Meta()`
+- Parsing non-HTML batch RPC responses using `gjson` and `gosm`
+- Job-based spider triggering from `main.go`
 
-## Spider Logic
+## main.go
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := google_finance.New(ctx)
+    // ... error handling
+
+    ticker := "GOOGL:NASDAQ"
+    job := google_finance.NewJob(ticker)
+    spider.StartRequest(ctx, job)
+
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Printf("Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## spider.go
 
 ```go
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     ticker := job.Query()
     body, rpcids := buildBatchRequest(ticker)
 
-    targetUrl := fmt.Sprintf("%s?rpcids=%s&source-path=/finance/quote/%s",
+    targetUrl := fmt.Sprintf("%s?rpcids=%s&source-path=/finance/quote/%s&hl=en&gl=us&rt=c",
         GOOGLE_RPC_URL, rpcids, ticker)
 
     req := s.Request(ctx).
@@ -41,8 +62,33 @@ func (s *Spider) parseResponse(ctx context.Context, resp core.IResponseReader) {
     results := parseBatchResults(resp.Bytes())
     record := &Record{J: NewJob(ticker)}
     mapQuote(ticker, results["xh8wxf"], record)
-    // ... map other data
+    mapCompany(results["HqGpWd"], record)
+    mapChart(results["AiCwsd"], record)
+    mapNews(results["nBEQBc"], record)
+
     s.Yield(record)
+}
+```
+
+## utils.go (Parsing Helpers)
+
+The utils file contains the core parsing logic for Google's custom batch RPC format:
+
+```go
+// buildBatchRequest constructs the hex-delimited JSON body for Google Finance RPC calls
+func buildBatchRequest(ticker string) (string, string) { ... }
+
+// parseBatchResults extracts individual RPC results from Google's chunked response
+func parseBatchResults(data []byte) map[string]gjson.Result { ... }
+
+// mapQuote uses gosm.Map() to automatically populate Record fields from JSON
+func mapQuote(ticker string, raw gjson.Result, record *Record) {
+    _ = gosm.Map(raw, record)
+    // ... special handling for crypto tickers
+}
+
+func mapCompany(raw gjson.Result, record *Record) {
+    _ = gosm.Map(raw, record)
 }
 ```
 

@@ -3,38 +3,86 @@ title: "TUI Dashboard"
 description: "Real-time terminal UI with Bubble Tea"
 ---
 
-This example integrates GoScrapy's telemetry system with a Bubble Tea-based terminal UI, providing a real-time dashboard showing scraping metrics.
+This example integrates GoScrapy's telemetry system with a Bubble Tea-based terminal dashboard, providing real-time scraping metrics.
 
 **Key concepts demonstrated:**
 
-- Imperative CSS extraction (without Gosm) for full control
-- Scoping selectors with `resp.Css("article.product_page")`
-- Safe extraction pattern (checking slice length before access)
+- Setting up the `TelemetryHub` with a `StatsCollector`
+- Wiring the `tui.Dashboard` as a telemetry observer
+- Starting the engine with `gos.StartWithTUI()` instead of `app.Start()`
 
-## Spider Logic (Imperative Extraction)
-
-This example intentionally uses imperative selectors (instead of Gosm) to demonstrate the full selector API:
+## main.go
 
 ```go
-func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
-    product := resp.Css("article.product_page")
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
 
-    var title string
-    if titles := product.Css(".product_main h1").Text(); len(titles) > 0 {
-        title = titles[0]
+    // Pass `true` to enable the TUI dashboard
+    spider, err := with_tui_stats.New(ctx, true)
+    // ... error handling
+
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Printf("❌ Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## base.go (TUI Integration)
+
+This is the key file. The TUI is wired in `New()` by creating a `TelemetryHub`, adding a `StatsCollector`, and attaching the `tui.Dashboard` as an observer:
+
+```go
+func New(ctx context.Context, tuiEnabled bool) (*Spider, error) {
+    app, err := gos.New[*Record]()
+    // ...
+
+    app.WithMiddlewares(MIDDLEWARES...).
+        WithPipelines(PIPELINES...)
+
+    spider := &Spider{ICoreSpider: app, baseUrl: "https://books.toscrape.com"}
+    app.RegisterSpider(spider)
+
+    if tuiEnabled {
+        // 1. Create a TelemetryHub
+        hub := ts.NewTelemetryHub(nil)
+
+        // 2. Register the Stats middleware as a collector
+        hub.AddCollector(HttpStats)
+
+        // 3. Print final stats when engine stops
+        app.OnEngineStopped(func(ctx context.Context) {
+            HttpStats.Print()
+        })
+
+        // 4. Create the TUI dashboard and wire it as an observer
+        dashboard := tui.New(app.Logger())
+        hub.AddObserver(dashboard)
+        app.WithTelemetry(hub, nil)
+
+        // 5. Start with TUI instead of regular app.Start()
+        go func() {
+            _ = gos.StartWithTUI(ctx, app, dashboard)
+        }()
+    } else {
+        go func() { _ = app.Start(ctx) }()
     }
 
-    var price string
-    if prices := product.Css(".price_color").Text(); len(prices) > 0 {
-        price = prices[0]
-    }
+    return spider, nil
+}
+```
 
-    var rating string
-    if attrs := product.Css(".star-rating").Attr("class"); len(attrs) > 0 {
-        rating = strings.Split(attrs[0], " ")[1]
-    }
+## settings.go
 
-    s.Yield(&Record{Title: title, Price: price, Rating: rating})
+```go
+// The Stats middleware collects request/response metrics
+var HttpStats = middlewares.NewStatsCollector()
+
+var MIDDLEWARES = []middlewaremanager.Middleware{
+    middlewares.Stats(HttpStats), // must be first to capture all traffic
+    middlewares.Retry(),
+    middlewares.MultiCookieJar,
+    middlewares.DupeFilter(),
 }
 ```
 

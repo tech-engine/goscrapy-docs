@@ -7,25 +7,41 @@ This example scrapes [books.toscrape.com](https://books.toscrape.com), extractin
 
 **Key concepts demonstrated:**
 
-- CSS selectors for pagination (`li.next a@href`)
-- Gosm declarative mapping for product details
-- Multi-callback spider pattern (listing → detail)
+- Gosm declarative mapping for extracting product details and pagination links
+- Multi-callback spider pattern (listing page → detail page)
+- CSV pipeline export
 
-## Spider Logic
+## main.go
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := books_to_scrape.New(ctx)
+    // ... error handling
+
+    spider.StartRequests(ctx)
+
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Fprintf(os.Stderr, "❌ Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## spider.go
 
 ```go
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-    // Use Gosm to extract all product links and pagination in one go
     var list Listing
     _ = gosm.Map(resp, &list)
 
-    // Follow each product link
     for _, productUrl := range list.ProductLinks {
         productUrl = fmt.Sprintf("%s/catalogue/%s", s.baseUrl, productUrl)
         s.Parse(s.Request(ctx).Url(productUrl), s.parseProduct)
     }
 
-    // Follow pagination
+    // pagination
     if list.NextPage != "" {
         nextPageUrl := fmt.Sprintf("%s/catalogue/%s", s.baseUrl, list.NextPage)
         s.Parse(s.Request(ctx).Url(nextPageUrl), s.parse)
@@ -35,19 +51,29 @@ func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
 func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
     record := &Record{}
     _ = gosm.Map(resp, record)
+
+    // Post-process: extract rating word from class ("star-rating Three" → "Three")
+    if parts := strings.Split(record.Rating, " "); len(parts) > 1 {
+        record.Rating = parts[1]
+    }
     s.Yield(record)
+}
+
+func (s *Spider) StartRequests(ctx context.Context) {
+    s.Parse(s.Request(ctx).Url(s.baseUrl), s.parse)
 }
 ```
 
-## Record (Gosm Tags)
+## record.go (Gosm Tags)
 
 ```go
 type Record struct {
-    Title       string `gos_css:".product_main h1" json:"title" csv:"title"`
-    Price       string `gos_css:".price_color" json:"price" csv:"price"`
-    Rating      string `gos_css:".star-rating@class" json:"rating" csv:"rating"`
-    Description string `gos_css:"#product_description + *" json:"description" csv:"description"`
-    Upc         string `gos_css:"table tr:nth-child(1) td" json:"upc" csv:"upc"`
+    J           *Job   `json:"-" csv:"-"`
+    Title       string `json:"title" csv:"title" gos_css:".product_main h1"`
+    Price       string `json:"price" csv:"price" gos_css:".price_color"`
+    Rating      string `json:"rating" csv:"rating" gos_css:".star-rating@class"`
+    Description string `json:"description" csv:"description" gos_css:"#product_description + *"`
+    Upc         string `json:"upc" csv:"upc" gos_css:"table tr:nth-child(1) td"`
 }
 
 type Listing struct {

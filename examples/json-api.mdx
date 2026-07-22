@@ -3,21 +3,39 @@ title: "JSON API Scraping"
 description: "Parsing JSON API responses"
 ---
 
-This example (`scrapejsp`) demonstrates scraping a JSON API endpoint, parsing the response with `json.Unmarshal`, and yielding the result to pipelines.
+This example (`scrapejsp`) demonstrates how to scrape a JSON API endpoint instead of HTML pages.
 
 **Key concepts demonstrated:**
 
-- Working with JSON API responses instead of HTML
-- Using `resp.Bytes()` with `json.Unmarshal`
-- Lifecycle hooks (`Open`, `Close`)
+- Working with JSON API responses using `resp.Bytes()` and `json.Unmarshal`
+- Lifecycle hooks (`Open` / `Close`) for automatic spider startup
 
-## Spider Logic
+## main.go
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := scrapejsp.New(ctx)
+    // ... error handling
+
+    // No StartRequests needed — spider.Open() seeds requests automatically
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Fprintf(os.Stderr, "❌ Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## spider.go
 
 ```go
 func (s *Spider) Open(ctx context.Context) {
     req := s.Request(ctx).Url("https://jsonplaceholder.typicode.com/todos/1")
     s.Parse(req, s.parse)
 }
+
+func (s *Spider) Close(ctx context.Context) {}
 
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
     fmt.Printf("status: %d", resp.StatusCode())

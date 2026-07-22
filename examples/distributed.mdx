@@ -3,45 +3,104 @@ title: "Distributed Scraping"
 description: "Scaling GoScrapy horizontally"
 ---
 
-This example demonstrates a distributed scraping pattern using GoScrapy's `Open()` lifecycle hook and external scheduling.
+This example demonstrates how to distribute GoScrapy's workload across multiple instances using a custom Redis-backed task queue that replaces the default in-memory scheduler.
 
 **Key concepts demonstrated:**
 
-- Using `Open()` to seed requests automatically
-- Parallel CSS extraction of titles and prices
-- Pagination with `resp.Css("li.next a").Attr("href")`
+- Implementing a custom `scheduler.ITaskQueue` backed by Redis
+- Injecting the custom queue via `gos.Config{TaskQueue: redisQueue}`
+- Enabling multiple GoScrapy instances to share the same work queue
 
-## Spider Logic
+## main.go
 
 ```go
-func (s *Spider) Open(ctx context.Context) {
-    s.Logger().Info("Spider opened, seeding initial request...")
-    req := s.Request(ctx).Url(s.baseUrl)
-    s.Parse(req, s.parse)
-}
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
 
-func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-    titles := resp.Css("article.product_pod h3 a").Attr("title")
-    prices := resp.Css("article.product_pod .price_color").Text()
+    spider, err := distributed_scraping.New(ctx)
+    // ... error handling
 
-    for i := 0; i < len(titles) && i < len(prices); i++ {
-        s.Yield(&Record{
-            Title: titles[i],
-            Price: prices[i],
-        })
-    }
+    fmt.Println("🕷️  Distributed GoScrapy spider is running (Redis-backed).")
 
-    // Pagination
-    for _, nextUrl := range resp.Css("li.next a").Attr("href") {
-        fullUrl := fmt.Sprintf("https://books.toscrape.com/catalogue/%s", nextUrl)
-        s.Parse(s.Request(ctx).Url(fullUrl), s.parse)
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Printf("❌ Engine finished with error: %v\n", err)
     }
 }
 ```
 
+## base.go (Custom Queue Injection)
+
+The key to distribution is passing a custom `TaskQueue` to `gos.New()`:
+
+```go
+func New(ctx context.Context) (*Spider, error) {
+    // Create the Redis-backed Task Queue
+    redisQueue := NewRedisTaskQueue(RedisOptions{
+        Addr:     REDIS_ADDR,
+        Username: REDIS_USER,
+        Password: REDIS_PASSWORD,
+        Key:      REDIS_KEY,
+    })
+
+    // Inject it into GoScrapy via Config
+    app, err := gos.New[*Record](&gos.Config{
+        TaskQueue: redisQueue,
+    })
+    // ...
+}
+```
+
+## redis\_queue.go (Custom ITaskQueue Implementation)
+
+This is the core of the distributed architecture. It implements `scheduler.ITaskQueue` using Redis lists and sorted sets with Lua scripts for atomicity:
+
+```go
+type redisTaskQueue struct {
+    client            *redis.Client
+    queueKey          string     // main work queue (Redis List)
+    activeKey         string     // in-progress tasks (Redis Sorted Set)
+    dataKey           string     // task data storage (Redis Hash)
+    visibilityTimeout time.Duration
+}
+
+func (q *redisTaskQueue) Push(ctx context.Context, task scheduler.QueuedTask) error {
+    // Serialize the request + callback name
+    data, _ := json.Marshal(redisTask{
+        Request:      task.Request,
+        CallbackName: task.CallbackName,
+    })
+    // Atomically store data and push to queue
+    pipe := q.client.Pipeline()
+    pipe.HSet(ctx, q.dataKey, taskID, data)
+    pipe.LPush(ctx, q.queueKey, taskID)
+    _, err = pipe.Exec(ctx)
+    return err
+}
+
+func (q *redisTaskQueue) Pull(ctx context.Context) (scheduler.QueuedTask, engine.TaskHandle, error) {
+    // Atomically: RPOP from queue, ZADD to active set with visibility timeout
+    // Uses Lua script for atomicity
+}
+
+func (q *redisTaskQueue) Ack(ctx context.Context, handle engine.TaskHandle) error {
+    // Remove from active set + clean up data
+}
+
+func (q *redisTaskQueue) Nack(ctx context.Context, handle engine.TaskHandle) error {
+    // Move back from active to main queue for retry
+}
+```
+
+A background **reaper goroutine** recovers orphaned tasks (tasks that exceeded the visibility timeout without being Ack'd).
+
 ## Running
+
+Ensure Redis is running, then:
 
 ```bash
 cd _examples/distributed_scraping
 go run main.go
 ```
+
+You can run multiple instances of this spider concurrently — they will all share the same Redis task queue.
