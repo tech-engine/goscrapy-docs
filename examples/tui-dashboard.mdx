@@ -32,7 +32,7 @@ func main() {
 
 This is the key file. The TUI is wired in `New()` by creating a `TelemetryHub`, adding a `StatsCollector`, and attaching the `tui.Dashboard` as an observer:
 
-```go base.go
+```go base.go expandable
 func New(ctx context.Context, tuiEnabled bool) (*Spider, error) {
     app, err := gos.New[*Record]()
     // ...

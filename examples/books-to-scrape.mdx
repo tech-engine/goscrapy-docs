@@ -31,7 +31,7 @@ func main() {
 
 ## spider.go
 
-```go spider.go
+```go spider.go expandable
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
     var list Listing
     _ = gosm.Map(resp, &list)

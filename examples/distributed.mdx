@@ -55,7 +55,7 @@ func New(ctx context.Context) (*Spider, error) {
 
 This is the core of the distributed architecture. It implements `scheduler.ITaskQueue` using Redis lists and sorted sets with Lua scripts for atomicity:
 
-```go redis_queue.go
+```go redis_queue.go expandable
 type redisTaskQueue struct {
     client            *redis.Client
     queueKey          string     // main work queue (Redis List)

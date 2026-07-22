@@ -34,7 +34,7 @@ func main() {
 
 ## spider.go
 
-```go spider.go
+```go spider.go expandable
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     ticker := job.Query()
     body, rpcids := buildBatchRequest(ticker)

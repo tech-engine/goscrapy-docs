@@ -30,7 +30,7 @@ func main() {
 
 ## base.go (Signal Wiring)
 
-```go base.go
+```go base.go expandable
 func New(ctx context.Context) (*Spider, error) {
     app, _ := gos.New[*Record]()
     app.WithMiddlewares(MIDDLEWARES...).WithPipelines(PIPELINES...)
@@ -63,7 +63,7 @@ func New(ctx context.Context) (*Spider, error) {
 
 ## spider.go (Lifecycle Hooks \+ Signal Handlers)
 
-```go spider.go
+```go spider.go expandable
 // Auto-discovered lifecycle hooks
 func (s *Spider) Open(ctx context.Context) {
     log.Println("[spider hook] open called")

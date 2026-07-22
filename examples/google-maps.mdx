@@ -35,7 +35,7 @@ func main() {
 
 ## spider.go
 
-```go spider.go
+```go spider.go expandable
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     if job.loc == nil {
         // Step 1: Geocode the query to get lat/lng
@@ -76,7 +76,7 @@ func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader)
 
 The heavy lifting happens in `utils.go`:
 
-```go utils.go
+```go utils.go expandable
 // ExtractMapResults parses Google Maps' raw JSON response
 func ExtractMapResults(data []byte) []Record {
     body := bytes.TrimPrefix(data, []byte(")]}'")

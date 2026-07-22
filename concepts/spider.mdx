@@ -49,7 +49,7 @@ func (s *Spider) Open(ctx context.Context) {
 
 The parse callback is where you process each response. It receives a `context.Context` and an `IResponseReader`.
 
-```go spider.go
+```go spider.go expandable
 func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
     // 1. Log the response
     s.Logger().Infof("GET: %d %s", resp.StatusCode(), resp.Request().URL.String())
