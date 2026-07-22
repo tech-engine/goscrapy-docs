@@ -110,8 +110,5 @@
       "discord": "https://discord.gg/FPvxETjYPH"
     }
   },
-  "description": "GoScrapy is high performance yet lightweight webscraping framework in go bringing the experience of python's Scrapy in go.",
-  "background": {
-    "decoration": "windows"
-  }
+  "description": "GoScrapy is high performance yet lightweight webscraping framework in go bringing the experience of python's Scrapy in go."
 }
