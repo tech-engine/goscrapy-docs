@@ -1,6 +1,6 @@
 ---
-title: "Customizing the HTTP Client"
-description: "How to configure GoScrapy's default HTTP client"
+title: "Customize the GoScrapy HTTP client"
+description: "Configure GoScrapy's default HTTP client with custom timeouts, transports, proxies, and TLS settings, or swap in your own client implementation."
 ---
 
 GoScrapy uses a highly optimized `http.Client` under the hood. While the defaults are suitable for most workloads, you can customize it by passing options to `gos.DefaultClient()` and injecting it into the engine during setup.

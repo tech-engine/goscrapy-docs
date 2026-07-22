@@ -1,6 +1,6 @@
 ---
-title: "Writing Spiders"
-description: "Your spider.go is where all the action happens"
+title: "Write spiders: callbacks, lifecycle, and yielding"
+description: "Build spiders in spider.go by seeding requests, defining parse callbacks, using lifecycle hooks like Open and Close, and yielding records to pipelines."
 ---
 
 `spider.go` is where you will invest most of your time. This file contains the entire scraping logic: seeding initial requests, parsing responses, extracting data, following links, and yielding records to the pipeline.

@@ -1,6 +1,6 @@
 ---
-title: "Overview"
-description: "Understanding Middlewares in GoScrapy"
+title: "Middlewares overview and request lifecycle"
+description: "How GoScrapy middlewares intercept HTTP requests and responses between the worker pool and HTTP adapter, and common use cases like retries and cookies."
 ---
 
 Middlewares intercept the HTTP request/response lifecycle. They sit between the Worker Pool and the HTTP Adapter, giving you hooks to modify requests before they are sent and responses before they reach your spider.

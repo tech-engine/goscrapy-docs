@@ -1,6 +1,6 @@
 ---
-title: "Parsing HTML"
-description: "Extract data using CSS and XPath selectors"
+title: "Parse HTML with CSS and XPath selectors"
+description: "Extract data from HTML responses in GoScrapy using chainable CSS and XPath selectors, attribute lookups, text extraction, and nested queries."
 ---
 
 The `IResponseReader` embeds `ISelector`, providing chainable methods for querying HTML. Selectors return an `ISelector` which can be further chained or have its data extracted using `.Text()`, `.Attr()`, `.Get()`, or `.GetAll()`.
