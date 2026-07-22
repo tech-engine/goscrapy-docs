@@ -1,0 +1,60 @@
+---
+title: "Pipeline Groups"
+description: "Executing multiple pipelines concurrently"
+---
+
+A `Group` is a collection of pipelines intended to run concurrently as opposed to sequentially. `pipelinemanager.Group` implements the standard `IPipeline` interface, meaning the engine treats the entire group as if it were a single pipeline.
+
+## When to use Pipeline Groups
+
+Because pipelines in a group run concurrently, **they should not be used for data transformation**. If Pipeline A depends on data modified by Pipeline B, they must run sequentially (the default behavior).
+
+**Use Pipeline Groups when you want to export data to multiple independent sinks simultaneously.** For example, writing to a CSV file and sending data to a MongoDB database at the same time.
+
+## Example: Creating a Group
+
+You typically define your groups in `settings.go`:
+
+```go
+package my_spider
+
+import (
+    pm "github.com/tech-engine/goscrapy/pkg/pipeline_manager"
+)
+
+func myCustomPipelineGroup() engine.IPipeline[*Record] {
+    // Initialize a new Pipeline Group
+    pipelineGroup := pm.NewGroup[*Record]()
+    
+    // Add multiple independent pipelines
+    pipelineGroup.Add(export2CSV)
+    pipelineGroup.Add(export2Mongo)
+    
+    return pipelineGroup
+}
+
+var PIPELINES = []engine.IPipeline[*Record]{
+    // The group behaves like a single pipeline in the chain
+    myCustomPipelineGroup(),
+}
+```
+
+## Error Handling (`WithIgnoreError`)
+
+By default, if any pipeline within a group returns an error during `Open()` or `ProcessItem()`, the context is canceled and the group immediately returns the first non-nil error.
+
+If you want the group to continue executing the remaining pipelines even if one fails, you can enable `WithIgnoreError()`:
+
+```go
+func myCustomPipelineGroup() engine.IPipeline[*Record] {
+    pipelineGroup := pm.NewGroup[*Record]()
+    
+    // If the MongoDB pipeline fails, the CSV export will still complete
+    pipelineGroup.WithIgnoreError()
+    
+    pipelineGroup.Add(export2CSV)
+    pipelineGroup.Add(export2Mongo)
+    
+    return pipelineGroup
+}
+```
