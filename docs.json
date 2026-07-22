@@ -31,10 +31,10 @@
         "group": "Core Concepts",
         "pages": [
           "architecture",
-          "concepts/declarative-mapping",
           "concepts/spider",
           "concepts/request-response",
-          "concepts/selectors"
+          "concepts/selectors",
+          "concepts/declarative-mapping"
         ]
       },
       {
