@@ -3,50 +3,87 @@ title: "Declarative Mapping"
 description: "Extract data automatically using Struct Tags"
 ---
 
-Writing imperative code to manually parse HTML can become unmaintainable. **Gosm** is GoScrapy's declarative mapping engine that lets you define extraction rules using struct tags.
+Writing imperative code with `.Css()` and `.Text()` for every field becomes tedious and error-prone, especially with deeply nested HTML. **Gosm** is GoScrapy's declarative mapping engine that lets you define extraction rules using struct tags and populate your records in a single line of code.
 
-### Scenario 1: Basic HTML & Attributes
+## Available Struct Tags
 
-You can map CSS and XPath selectors directly to struct fields. Use `@` to target specific attributes.
+| Tag | Source | Description |
+| :-- | :-- | :-- |
+| `gos:"path"` | JSON | Navigate a JSON response using dot-notation (e.g., `data.0.title`). |
+| `gos_css:"selector"` | HTML | Extract from HTML using a CSS selector. |
+| `gos_xpath:"expr"` | HTML | Extract from HTML using an XPath expression. |
+
+Use the `@attr` suffix to extract an attribute instead of inner text (e.g., `gos_css:"a@href"`).
+
+---
+
+## Scenario 1: Basic HTML Extraction
+
+Map CSS selectors directly to struct fields. Add `json` and `csv` tags for pipeline exports.
 
 ```go
 type Record struct {
-    Title    string `gos_css:".product_main h1"`
-    Price    string `gos_css:".price_color"`
-    
-    // Extracting an attribute
-    Rating   string `gos_css:".star-rating@class"`
-    NextPage string `gos_css:"li.next a@href"`
-}
-
-func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-    var record Record
-    _ = gosm.Map(resp, &record) 
+    Title       string `gos_css:".product_main h1" json:"title" csv:"title"`
+    Price       string `gos_css:".price_color" json:"price" csv:"price"`
+    Description string `gos_css:"#product_description + *" json:"description" csv:"description"`
 }
 ```
 
-### Scenario 2: JSON Extraction
+## Scenario 2: Extracting Attributes
 
-If you're dealing with JSON responses, use the `gos` tag with dot-notation to navigate the JSON path.
+Append `@attr_name` to the selector to extract an attribute instead of text.
+
+```go
+type Record struct {
+    // Extract the 'class' attribute (e.g., "star-rating Three")
+    Rating   string `gos_css:".star-rating@class"`
+    
+    // Extract href from a link
+    NextPage string `gos_css:"li.next a@href"`
+    
+    // Extract src from an image
+    Image    string `gos_css:"img.thumbnail@src"`
+}
+```
+
+## Scenario 3: Extracting Multiple Elements (Slices)
+
+Use a `[]string` field to capture all matching elements at once.
+
+```go
+type Listing struct {
+    ProductLinks []string `gos_css:"article.product_pod h3 a@href"`
+    NextPage     string   `gos_css:"li.next a@href"`
+}
+
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+    var list Listing
+    _ = gosm.Map(resp, &list)
+    
+    for _, url := range list.ProductLinks {
+        s.Parse(s.Request(ctx).Url(url), s.parseProduct)
+    }
+}
+```
+
+## Scenario 4: Deeply Nested JSON
+
+For JSON API responses, use `gos` with dot-notation to navigate nested paths. Array indices are supported.
 
 ```go
 type APIResponse struct {
+    // Navigate: {"data": [{"title": "..."}]}
     ProductName string `gos:"data.0.title"`
     Price       int    `gos:"data.0.metrics.price"`
 }
 ```
 
-### Scenario 3: Deeply Nested Structures
-
-Gosm handles recursion automatically. If a page has a list of items, you can map them to a slice of structs without writing imperative loops.
+## Usage
 
 ```go
-type Page struct {
-    Products []Product `gos_css:"article.product_pod"`
-}
-
-type Product struct {
-    Title string `gos_css:"h3 a@title"`
-    Price string `gos_css:".price_color"`
+func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
+    record := &Record{}
+    _ = gosm.Map(resp, record)
+    s.Yield(record)
 }
 ```

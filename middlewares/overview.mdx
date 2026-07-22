@@ -3,24 +3,35 @@ title: "Overview"
 description: "Understanding Middlewares in GoScrapy"
 ---
 
-Middlewares provide a way to inject custom logic into the request/response lifecycle. They sit right between the Worker Pool (execution layer) and the HTTP Adapter (network layer).
+Middlewares intercept the HTTP request/response lifecycle. They sit between the Worker Pool and the HTTP Adapter, giving you hooks to modify requests before they are sent and responses before they reach your spider.
+
+## Request-Response Lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant Worker as Worker Pool
-    participant Mid as Middlewares
+    participant W as Worker Pool
+    participant M1 as Middleware 1
+    participant M2 as Middleware 2
     participant Net as HTTP Adapter
 
-    Worker->>Mid: 1. ProcessRequest()
-    Note over Mid: Add headers, check cache,<br/>manage cookies, spoof TLS
-    Mid->>Net: 2. Execute HTTP Request
-    Net-->>Mid: 3. Return HTTP Response
-    Note over Mid: Handle retries,<br/>check status codes
-    Mid-->>Worker: 4. ProcessResponse()
+    W->>M1: Request
+    Note over M1: e.g. DupeFilter<br/>Drops duplicate URLs
+    M1->>M2: Request
+    Note over M2: e.g. MultiCookieJar<br/>Attaches cookies
+    M2->>Net: HTTP Request
+    Net-->>M2: HTTP Response
+    Note over M2: Store response cookies
+    M2-->>M1: Response
+    Note over M1: e.g. Retry<br/>Retry on 5xx status
+    M1-->>W: Response
 ```
 
-Middlewares can:
+> \[!NOTE\] Middlewares are executed in **reverse order** from bottom to top as listed in `settings.go`. The last middleware in the list is the closest to the HTTP Adapter.
 
-- Modify a request before it is sent (e.g., add headers, manage cookies, or spoof TLS).
-- Process a response before it reaches your spider (e.g., handle retries, check status codes).
-- Track telemetry and metrics.
+## Common Use Cases
+
+- **Retry failed requests** with exponential backoff.
+- **Filter duplicate URLs** to avoid redundant work.
+- **Manage cookies** across requests using named sessions.
+- **Spoof TLS fingerprints** to bypass advanced bot detection.
+- **Collect telemetry** and metrics on request/response performance.

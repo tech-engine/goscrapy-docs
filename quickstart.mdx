@@ -25,44 +25,33 @@ GoScrapy requires **Go 1.26** or higher.
     Generate all necessary files for a new scraper project.
 
     ```bash
-    goscrapy startproject books_to_scrape
+    goscrapy startproject my_scraper
     ```
 
     When prompted, accept to resolve dependencies (`go mod tidy`).
   </Step>
-  <Step title="Explore the Code">
-    Your project is generated with best-practice scaffolding:
+  <Step title="Write Your Parsing Logic">
+    Open `my_scraper/spider.go` and add a `StartRequests` method to seed the initial URL:
 
-    - `settings.go`: Configure pipelines and middlewares
-    - `base.go`: Engine setup (hide boilerplate)
-    - `spider.go`: Your parsing logic
+    ```go
+    func (s *Spider) StartRequests(ctx context.Context) {
+        req := s.Request(ctx).Url("https://books.toscrape.com")
+        s.Parse(req, s.parse)
+    }
+    
+    func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+        s.Logger().Infof("Status: %d, URL: %s", resp.StatusCode(), resp.Request().URL)
+        // your extraction logic here...
+    }
+    ```
+  </Step>
+  <Step title="Run Your Spider">
+    From the project root directory:
+
+    ```bash
+    go run main.go
+    ```
+
+    You should see GoScrapy's banner followed by your spider's log output. Press `Ctrl+C` to stop.
   </Step>
 </Steps>
-
-## Example Spider
-
-Your `spider.go` (scaffolded by the CLI) remains clean and focused entirely on parsing.
-
-```go
-package myspider
-
-import (
-	"context"
-	"encoding/json"
-	"github.com/tech-engine/goscrapy/pkg/core"
-)
-
-// Open is auto-called by goscrapy during engine startup
-func (s *Spider) Open(ctx context.Context) {
-	req := s.Request(ctx).Url("https://httpbin.org/get")
-	s.Parse(req, s.parse)
-}
-
-func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-	s.Logger().Infof("status: %d", resp.StatusCode())
-    // Process response ...
-}
-
-// Close is auto-called by goscrapy during engine shutdown
-func (s *Spider) Close(ctx context.Context) {}
-```

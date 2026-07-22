@@ -3,46 +3,71 @@ title: "signals"
 description: "Event-driven architecture using a central signal bus"
 ---
 
-GoScrapy uses a central signal bus to decouple various components and provide hooks for custom logic. You can connect to these signals to monitor the engine, track item progress, or handle errors.
+Signals are an event-driven system that lets you hook into the engine's lifecycle without modifying core logic. They decouple monitoring, metrics, and alerting from your spider code.
 
-## Wiring Signals
+## Where to Wire Signals
 
-Signals are typically wired in your `main.go` right after initializing the engine via `gos.New()`. They use a fluent builder pattern, providing compile-time safety and IDE auto-completion.
+Signals are typically wired in `base.go`, right after calling `gos.New()` and before `app.RegisterSpider(spider)`. They use a fluent builder pattern with full compile-time type safety.
 
 ```go
-func main() {
-    ctx := context.Background()
-    
-    // 1. Initialize the app
-    app, _ := gos.New[*MyRecord]()
-     
-    // 2. Wire up signals
+// In base.go
+func New(ctx context.Context) (*Spider, error) {
+    app, _ := gos.New[*Record]()
+
+    app.WithMiddlewares(MIDDLEWARES...).
+        WithPipelines(PIPELINES...)
+
+    spider := &Spider{ICoreSpider: app}
+
+    // Wire signals here
     app.OnEngineStarted(func(ctx context.Context) {
-        log.Println("engine started")
+        log.Println("[signal] engine started")
     }).
-    OnItemScraped(func(ctx context.Context, item *MyRecord) {
-        log.Printf("item scraped: %s", item.Title)
+    OnRequestScheduled(func(ctx context.Context, req *core.Request) {
+        log.Printf("[signal] request scheduled: %s", req.URL)
     }).
-    OnSpiderError(func(ctx context.Context, err error) {
-        log.Printf("spider error: %v", err)
+    OnResponseReceived(func(ctx context.Context, resp core.IResponseReader) {
+        log.Printf("[signal] response: %s (status: %d)", resp.Request().URL, resp.StatusCode())
+    }).
+    OnItemScraped(func(ctx context.Context, item *Record) {
+        log.Printf("[signal] scraped: %s", item.Title)
+    }).
+    OnItemDropped(func(ctx context.Context, item *Record, err error) {
+        log.Printf("[signal] item dropped: %v", err)
+    }).
+    OnEngineStopped(func(ctx context.Context) {
+        log.Println("[signal] engine stopped")
     })
-    
-    // 3. Start spider...
+
+    app.RegisterSpider(spider)
+    go func() { _ = app.Start(ctx) }()
+    return spider, nil
 }
 ```
 
-## Supported Signals
+## Available Signals
 
-| Category | Signal | Triggered when... |
+| Category | Signal | Handler Signature |
 | :-- | :-- | :-- |
-| **Engine** | `EngineStarted` | The engine has finished initialization and is starting. |
-|  | `EngineStopped` | The engine has finished all work and completed its shutdown. |
-| **Spider** | `SpiderOpened` | A spider is registered and ready to begin. |
-|  | `SpiderClosed` | A spider has finished all its tasks. |
-|  | `SpiderError` | A spider encounters an unhandled error. |
-| **Item** | `ItemScraped` | An item has successfully passed through all configured pipelines. |
-|  | `ItemDropped` | An item was explicitly dropped by a pipeline using `engine.ErrDropItem`. |
-|  | `ItemError` | A pipeline returned a non-nil error while processing an item. |
-| **Request** | `RequestScheduled` | A new request has been added to the scheduler. |
-|  | `RequestDropped` | A request was dropped due to a full queue or other limitations. |
-|  | `RequestError` | A request failed during execution (e.g., network timeout). |
+| **Engine** | `OnEngineStarted` | `func(context.Context)` |
+|  | `OnEngineStopped` | `func(context.Context)` |
+| **Spider** | `OnSpiderOpened` | `func(context.Context)` |
+|  | `OnSpiderClosed` | `func(context.Context)` |
+|  | `OnSpiderIdle` | `func(context.Context)` |
+|  | `OnSpiderError` | `func(context.Context, error)` |
+| **Item** | `OnItemScraped` | `func(context.Context, OUT)` |
+|  | `OnItemDropped` | `func(context.Context, OUT, error)` |
+|  | `OnItemError` | `func(context.Context, OUT, error)` |
+| **Request** | `OnRequestScheduled` | `func(context.Context, *core.Request)` |
+|  | `OnRequestDropped` | `func(context.Context, *core.Request, error)` |
+|  | `OnRequestError` | `func(context.Context, *core.Request, error)` |
+| **Response** | `OnResponseReceived` | `func(context.Context, core.IResponseReader)` |
+
+## Common Use Cases
+
+- **Metrics & Monitoring**: Count requests, responses, and errors in real time.
+- **Alerting**: Log or notify when items are dropped or errors spike.
+- **Auto-Exit**: `spider.Wait(true)` internally uses `OnSpiderIdle` to trigger graceful shutdown.
+- **Telemetry**: Feed data to the TUI stats dashboard or external monitoring systems.
+
+> \[!TIP\] See the [use\_signals example](/examples/overview) for a complete working project.

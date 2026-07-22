@@ -3,47 +3,76 @@ title: "Custom Pipeline"
 description: "How to build your own custom pipeline"
 ---
 
-To build a custom pipeline, implement the `engine.IPipeline` interface:
+## Scaffolding with the CLI
+
+GoScrapy provides a built-in command to scaffold a custom pipeline:
+
+```bash
+goscrapy pipeline my_validator
+```
+
+This creates `pipelines/my_validator.go` with all three required methods stubbed out, ready for your logic.
+
+## Generated Template
+
+The scaffolded pipeline looks like this:
 
 ```go
-type IPipeline[OUT any] interface {
-	Open(context.Context) error
-	ProcessItem(IPipelineItem, core.IOutput[OUT]) error
-	Close()
+package pipelines
+
+import (
+    "context"
+    "github.com/tech-engine/goscrapy/pkg/core"
+    "github.com/tech-engine/goscrapy/pkg/engine"
+)
+
+type MyValidator[OUT any] struct {
+    // add your custom fields here
+}
+
+func New[OUT any](args ...string) *MyValidator[OUT] {
+    return &MyValidator[OUT]{}
+}
+
+func (p *MyValidator[OUT]) Open(ctx context.Context) error {
+    return nil
+}
+
+func (p *MyValidator[OUT]) Close() {
+}
+
+func (p *MyValidator[OUT]) ProcessItem(item engine.IPipelineItem, original core.IOutput[OUT]) error {
+    // original.Record()      - access the yielded Record
+    // original.RecordKeys()  - access Record field names as a slice
+    // original.RecordFlat()  - access Record values as []any
+    // original.Job()         - access the Job
+    return nil
 }
 ```
 
-### Pipeline Methods
+## Dropping Items
 
-- **`Open(ctx)`**: Called when the engine starts. Ideal for opening files or connecting to databases.
-- **`ProcessItem(item, out)`**: Called for every yielded record. Contains the core logic. **Must be thread-safe** as it is called concurrently.
-- **`Close()`**: Called when the engine stops. Ideal for closing files/connections.
-
-## Example: Validation Pipeline
-
-If you want to explicitly drop an item (e.g., due to validation failure), return `engine.ErrDropItem` from `ProcessItem`.
+Return `engine.ErrDropItem` from `ProcessItem` to silently drop an item. It will not be passed to subsequent pipelines.
 
 ```go
-type ValidatePipeline struct{}
-
-func (p *ValidatePipeline) Open(ctx context.Context) error { return nil }
-func (p *ValidatePipeline) Close() {}
-
-func (p *ValidatePipeline) ProcessItem(item engine.IPipelineItem, out core.IOutput[*Record]) error {
+func (p *MyValidator[OUT]) ProcessItem(item engine.IPipelineItem, out core.IOutput[*Record]) error {
     record := out.Record()
     if record.Title == "" {
-        // Drop the item silently
         return engine.ErrDropItem
     }
     return nil
 }
 ```
 
-Register it in your `settings.go`:
+## Registering Your Pipeline
+
+Add it to `settings.go`. Pipelines run in order, so place validation pipelines **before** export pipelines:
 
 ```go
 var PIPELINES = []engine.IPipeline[*Record]{
-	&ValidatePipeline{},
-    export2CSV, // Will only receive valid items
+    pipelines.New[*Record](), // validation first
+    export2CSV,               // export only valid items
 }
 ```
+
+> \[!TIP\] Use `Open()` for any setup that needs the engine context (e.g., creating a file or connecting to a database). Use `Close()` to flush and release those resources.

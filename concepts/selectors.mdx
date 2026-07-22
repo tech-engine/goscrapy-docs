@@ -3,50 +3,88 @@ title: "Parsing HTML"
 description: "Extract data using CSS and XPath selectors"
 ---
 
-The `IResponseReader` provides chainable methods for querying HTML using CSS and XPath. Here are examples covering common scenarios.
+The `IResponseReader` embeds `ISelector`, providing chainable methods for querying HTML. Selectors return an `ISelector` which can be further chained or have its data extracted using `.Text()`, `.Attr()`, `.Get()`, or `.GetAll()`.
 
-## Using CSS Selectors
+## Selector API
 
-### 1. Extracting Text
+| Method | Returns | Description |
+| :-- | :-- | :-- |
+| `Css(selector)` | `ISelector` | Query using a CSS selector. Chainable. |
+| `Xpath(expr)` | `ISelector` | Query using an XPath expression. Chainable. |
+| `Text(defaults...)` | `[]string` | Extract inner text from matched nodes. |
+| `Attr(name)` | `[]string` | Extract an attribute value from matched nodes. |
+| `Get()` | `*html.Node` | Get the first matched raw `html.Node`. |
+| `GetAll()` | `[]*html.Node` | Get all matched raw `html.Node`s. |
+
+## CSS Selector Examples
+
+### Extracting Text
 
 ```go
-// Get the text of the first H1
-title := resp.Css("h1").Text()
+// Single element
+titles := resp.Css(".product_main h1").Text()
+if len(titles) > 0 {
+    title := titles[0]
+}
 
-// Get multiple elements (returns a slice)
+// Multiple elements
 prices := resp.Css("article.product_pod .price_color").Text()
 ```
 
-### 2. Extracting Attributes
+### Extracting Attributes
 
 ```go
-// Get the href attribute of a link
-link := resp.Css("a.product-link").Attr("href")
-
-// Loop through multiple links
+// Get href from links
 for _, productUrl := range resp.Css("article.product_pod h3 a").Attr("href") {
-    // Follow links
+    s.Parse(s.Request(ctx).Url(productUrl), s.parseProduct)
 }
+
+// Get title attribute
+titles := resp.Css("article.product_pod h3 a").Attr("title")
 ```
 
-### 3. Advanced Targeting
+### Scoping Selectors (Chaining)
+
+You can scope your selectors by chaining `.Css()` calls, narrowing the search context:
 
 ```go
-// Nth-child targeting
-upc := resp.Css("table tr:nth-child(1) td").Text()
+// First, scope to the product page container
+product := resp.Css("article.product_page")
 
-// Sibling targeting (e.g., getting the element right after a specific ID)
+// Then extract within that scope
+title := product.Css(".product_main h1").Text()
+price := product.Css(".price_color").Text()
+rating := product.Css(".star-rating").Attr("class")
+```
+
+### Advanced CSS Targeting
+
+```go
+// Nth-child targeting for table data
+upc := resp.Css("table tr:nth-child(1) td").Text()
+productType := resp.Css("table tr:nth-child(2) td").Text()
+reviewCount := resp.Css("table tr:nth-child(7) td").Text()
+
+// Adjacent sibling selector
 description := resp.Css("#product_description + *").Text()
 ```
 
-## Using XPath Selectors
+### Safe Extraction Pattern
+
+Since `.Text()` and `.Attr()` return slices, always check length before accessing:
 
 ```go
-// Get text by class
-price := resp.Xpath("//p[@class='price_color']").Text()
-
-// Check if an element exists
-if stocks := resp.Xpath("//p[@class='instock availability']").Text(); len(stocks) > 0 {
-    // Process stock
+var stock string
+if stocks := resp.Css(".availability").Text(); len(stocks) > 0 {
+    stock = strings.TrimSpace(stocks[0])
 }
 ```
+
+## XPath Examples
+
+```go
+price := resp.Xpath("//p[@class='price_color']").Text()
+inStock := resp.Xpath("//p[@class='instock availability']").Text()
+```
+
+> \[!TIP\] For complex or repetitive extractions, consider using [Declarative Mapping (Gosm)](/concepts/declarative-mapping) instead of writing imperative selector code.

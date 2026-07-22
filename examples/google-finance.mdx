@@ -1,0 +1,54 @@
+---
+title: "Google Finance"
+description: "Reverse-engineering Google's RPC API for stock data"
+---
+
+This example demonstrates a real-world advanced scraping pattern: reverse-engineering Google Finance's internal batch RPC API to extract stock quotes, company info, chart data, and news.
+
+**Key concepts demonstrated:**
+
+- POST requests with custom headers and body
+- Passing metadata between callbacks (`Meta("ticker", ticker)`)
+- Parsing non-HTML responses (raw RPC batch format)
+
+## Spider Logic
+
+```go
+func (s *Spider) StartRequest(ctx context.Context, job *Job) {
+    ticker := job.Query()
+    body, rpcids := buildBatchRequest(ticker)
+
+    targetUrl := fmt.Sprintf("%s?rpcids=%s&source-path=/finance/quote/%s",
+        GOOGLE_RPC_URL, rpcids, ticker)
+
+    req := s.Request(ctx).
+        Url(targetUrl).
+        Method("POST").
+        Body(body).
+        Meta("ticker", ticker)
+
+    for k, v := range RPC_HEADERS {
+        req.SetHeader(k, v)
+    }
+
+    s.Parse(req, s.parseResponse)
+}
+
+func (s *Spider) parseResponse(ctx context.Context, resp core.IResponseReader) {
+    tickerRaw, _ := resp.Meta("ticker")
+    ticker := tickerRaw.(string)
+
+    results := parseBatchResults(resp.Bytes())
+    record := &Record{J: NewJob(ticker)}
+    mapQuote(ticker, results["xh8wxf"], record)
+    // ... map other data
+    s.Yield(record)
+}
+```
+
+## Running
+
+```bash
+cd _examples/google_finance
+go run main.go
+```
