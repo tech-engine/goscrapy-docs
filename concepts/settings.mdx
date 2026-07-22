@@ -1,6 +1,6 @@
 ---
-title: "Environment Settings"
-description: "Configuring GoScrapy via settings.go"
+title: "Environment settings and tuning reference"
+description: "Reference for GoScrapy environment variables set in settings.go, covering autoscaler workers, HTTP client, retry middleware, and pipeline buffering."
 ---
 
 GoScrapy's engine and built-in components expose various tuning parameters via environment variables. By convention, these are initialized inside the `settings.go` file using `os.Setenv()`, allowing you to override them per-project while keeping defaults visible.

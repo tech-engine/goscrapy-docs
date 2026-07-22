@@ -1,6 +1,6 @@
 ---
-title: "Pipeline Groups"
-description: "Executing multiple pipelines concurrently"
+title: "Pipeline groups for concurrent execution"
+description: "Use GoScrapy pipeline groups to run multiple pipelines concurrently on each yielded record, improving throughput when exporting to several destinations."
 ---
 
 A `Group` is a collection of pipelines intended to run concurrently as opposed to sequentially. `pipelinemanager.Group` implements the standard `IPipeline` interface, meaning the engine treats the entire group as if it were a single pipeline.
