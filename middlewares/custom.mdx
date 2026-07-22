@@ -3,17 +3,7 @@ title: "Custom Middleware"
 description: "How to build your own custom middleware"
 ---
 
-A middleware in GoScrapy is a function that wraps an `http.RoundTripper`. You can scaffold one using the CLI, or write it manually.
-
-## Scaffolding
-
-GoScrapy currently provides a CLI command to scaffold custom **pipelines**:
-
-```bash
-goscrapy pipeline my_pipeline
-```
-
-For middlewares, you create them manually by implementing the `http.RoundTripper` wrapper pattern.
+A middleware in GoScrapy is a function that wraps an `http.RoundTripper`. You create them manually by implementing the wrapper pattern.
 
 ## Writing a Custom Middleware
 
@@ -51,8 +41,8 @@ Add it to the `MIDDLEWARES` slice in your `settings.go`:
 
 ```go
 var MIDDLEWARES = []middlewaremanager.Middleware{
-    LoggingMiddleware,       // your custom middleware
-    middlewares.Retry(),     // built-in retry
+    LoggingMiddleware,          // your custom middleware
+    middlewares.Retry(),        // built-in retry
     middlewares.MultiCookieJar, // built-in cookie management
     middlewares.DupeFilter(),   // built-in duplicate filter
 }

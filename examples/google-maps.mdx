@@ -3,21 +3,42 @@ title: "Google Maps"
 description: "Scraping location data and reviews from Google Maps"
 ---
 
-This example scrapes Google Maps search results, including geocoding, business listings, reviews, and ratings.
+This example scrapes Google Maps search results including geocoding, business listings, reviews, and ratings.
 
 **Key concepts demonstrated:**
 
 - Multi-step scraping flow (geocode → search → paginate)
-- Job-based spider triggering (`StartRequest(ctx, job)`)
-- Cursor-based pagination
-- Extracting data from raw bytes (`resp.Bytes()`)
+- Job-based spider triggering with configurable queries and max records
+- `gosm.Map()` on raw JSON bytes for complex nested data extraction
+- Passing job state between callbacks via `Meta()`
 
-## Spider Logic
+## main.go
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := google_maps_scraper.New(ctx)
+    // ... error handling
+
+    job := google_maps_scraper.NewJob("googlemaps_carwash")
+    job.SetQuery("car wash in CO, USA").SetMaxRecords(60)
+
+    spider.StartRequest(ctx, job)
+
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Fprintf(os.Stderr, "❌ Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## spider.go
 
 ```go
 func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     if job.loc == nil {
-        // Step 1: Geocode the query first
+        // Step 1: Geocode the query to get lat/lng
         req := prepareRequest(s.Request(ctx), generateGeocodingUrl("https://www.google.com", *job), *job)
         s.Parse(req, s.parseGeocoding)
         return
@@ -27,13 +48,19 @@ func (s *Spider) StartRequest(ctx context.Context, job *Job) {
     s.Parse(req, s.parseMapListing)
 }
 
-func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader) {
+func (s *Spider) parseGeocoding(ctx context.Context, resp core.IResponseReader) {
     job, ok := getJob(resp)
-    if !ok || resp.StatusCode() != 200 {
-        return
-    }
+    lat, lng, _, ok := extractGeocoding(resp.Bytes())
+    job.setLocation(lat, lng)
+    // Continue to search step...
+    req := prepareRequest(s.Request(ctx), generateSearchUrl("https://www.google.com", job), job)
+    s.Parse(req, s.parseMapListing)
+}
 
+func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader) {
+    job, _ := getJob(resp)
     records := ExtractMapResults(resp.Bytes())
+
     for _, record := range records {
         s.Yield(&record)
     }
@@ -42,6 +69,52 @@ func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader)
     job.SetCursor(job.cursor + 20)
     req := prepareRequest(s.Request(ctx), generateSearchUrl("https://www.google.com", job), job)
     s.Parse(req, s.parseMapListing)
+}
+```
+
+## utils.go (Core Parsing)
+
+The heavy lifting happens in `utils.go`:
+
+```go
+// ExtractMapResults parses Google Maps' raw JSON response
+func ExtractMapResults(data []byte) []Record {
+    body := bytes.TrimPrefix(data, []byte(")]}'")
+    records := gjson.GetBytes(body, "64.#.1")
+    // ... concurrent parsing with goroutines
+}
+
+// parseRecord uses gosm.Map() to populate a Record from gjson result
+func parseRecord(res gjson.Result, query string) *Record {
+    record := &Record{Query: query}
+    _ = gosm.Map(res, record)
+    // ... unicode decoding, review distribution parsing
+    return record
+}
+
+// extractGeocoding uses gosm with nested gos tags on raw bytes
+func extractGeocoding(data []byte) (lat, lng float64, query string, ok bool) {
+    type geoResponse struct {
+        Query string   `gos:"0.0"`
+        Geo0  *geoData `gos:"0.1.0.22.11"`
+    }
+    var res geoResponse
+    _ = gosm.Map(body, &res)
+    // ...
+}
+
+// prepareRequest attaches headers and job metadata to a request
+func prepareRequest(req *core.Request, url string, job Job) *core.Request {
+    return req.Url(url).
+        AddHeader("User-Agent", "Mozilla/5.0 ...").
+        Meta("JOB", job)
+}
+
+// getJob retrieves the Job from response metadata
+func getJob(resp core.IResponseReader) (Job, bool) {
+    data, ok := resp.Meta("JOB")
+    job, ok := data.(Job)
+    return job, ok
 }
 ```
 

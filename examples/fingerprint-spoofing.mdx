@@ -3,42 +3,60 @@ title: "Fingerprint Spoofing"
 description: "Bypass bot detection with Azure TLS middleware"
 ---
 
-This example demonstrates how to use the `AzureTLS` middleware to spoof TLS fingerprints and bypass advanced bot protection mechanisms like Cloudflare, Akamai, or Imperva.
+This example demonstrates how to use the `AzureTLS` middleware to spoof TLS fingerprints and bypass advanced bot protection (Cloudflare, Akamai, etc.).
 
 **Key concepts demonstrated:**
 
-- Per-request TLS configuration via context
-- Proxy support through `AzureTLSOptions`
-- Browser fingerprint emulation (Firefox, Chrome)
+- Configuring the Azure TLS middleware for browser fingerprint emulation
+- Per-request TLS and proxy override via context
 
-## Settings
+## main.go
 
 ```go
-// In settings.go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := fingerprint_spoofing.New(ctx)
+    // ... error handling
+
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Fprintf(os.Stderr, "❌ Engine finished with error: %v\n", err)
+    }
+}
+```
+
+## settings.go
+
+```go
 var azureTLSOpts = &middlewares.AzureTLSOptions{
     Browser: "firefox",
 }
 
 var MIDDLEWARES = []middlewaremanager.Middleware{
     middlewares.Retry(),
-    // Disable MultiCookieJar when using AzureTLS (it handles cookies)
+    // Disable MultiCookieJar when using AzureTLS (it handles cookies internally)
     middlewares.AzureTLS(azureTLSOpts),
     middlewares.DupeFilter(),
 }
 ```
 
-## Per-Request Override
-
-You can override TLS options per-request using context:
+## spider.go (Per-Request Override)
 
 ```go
 func (s *Spider) Open(ctx context.Context) {
+    // Override TLS options per-request via context
     ctx = middlewares.WithAzureTLSOptions(ctx, &middlewares.AzureTLSOptions{
         Browser: middlewares.BrowserFirefox,
         Proxy:   "http://user:pass@myproxy.com:8080",
     })
     req := s.Request(ctx).Url("https://tls.peet.ws/api/all")
     s.Parse(req, s.parse)
+}
+
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+    fmt.Printf("status: %d\n", resp.StatusCode())
+    fmt.Println(string(resp.Bytes()))
 }
 ```
 

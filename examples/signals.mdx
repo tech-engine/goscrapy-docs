@@ -7,44 +7,98 @@ This example demonstrates the full power of GoScrapy's signal system, including 
 
 **Key concepts demonstrated:**
 
-- Wiring signals in `base.go` using `app.OnEngineStarted()`, `app.OnItemScraped()`, etc.
-- Auto-discovered lifecycle hooks (`Open`, `Close`, `Idle`, `Error`)
+- Wiring explicit signals (`OnEngineStarted`, `OnItemScraped`, etc.) in `base.go`
+- Auto-discovered lifecycle hooks (`Open`, `Close`, `Idle`, `Error`) on the spider
 - Observing dropped requests (e.g., by DupeFilter)
 
-## Signal Wiring (base.go)
+## main.go
 
 ```go
-app.OnEngineStarted(func(ctx context.Context) {
-    log.Println("[signal] engine started")
-}).
-OnRequestScheduled(func(ctx context.Context, req *core.Request) {
-    log.Printf("[signal] request scheduled: %s", req.URL)
-}).
-OnResponseReceived(func(ctx context.Context, resp core.IResponseReader) {
-    log.Printf("[signal] response received: %s (status: %d)", resp.Request().URL, resp.StatusCode())
-}).
-OnItemScraped(spider.onItemScraped).
-OnRequestDropped(spider.onRequestDropped).
-OnItemDropped(spider.onItemDropped).
-OnEngineStopped(func(ctx context.Context) {
-    log.Println("[signal] engine stopped")
-})
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := use_signals.New(ctx)
+    // ... error handling
+
+    // No StartRequests needed — Open() seeds requests automatically
+    if err := spider.Wait(true); err != nil && !errors.Is(err, context.Canceled) {
+        fmt.Fprintf(os.Stderr, "❌ Engine finished with error: %v\n", err)
+    }
+}
 ```
 
-## Spider Hooks (spider.go)
+## base.go (Signal Wiring)
 
 ```go
+func New(ctx context.Context) (*Spider, error) {
+    app, _ := gos.New[*Record]()
+    app.WithMiddlewares(MIDDLEWARES...).WithPipelines(PIPELINES...)
+
+    spider := &Spider{ICoreSpider: app}
+
+    // Explicit signal subscriptions
+    app.OnEngineStarted(func(ctx context.Context) {
+        log.Println("[signal] engine started")
+    }).
+    OnRequestScheduled(func(ctx context.Context, req *core.Request) {
+        log.Printf("[signal] request scheduled: %s", req.URL)
+    }).
+    OnResponseReceived(func(ctx context.Context, resp core.IResponseReader) {
+        log.Printf("[signal] response received: %s (status: %d)", resp.Request().URL, resp.StatusCode())
+    }).
+    OnItemScraped(spider.onItemScraped).
+    OnRequestDropped(spider.onRequestDropped).
+    OnItemDropped(spider.onItemDropped).
+    OnEngineStopped(func(ctx context.Context) {
+        log.Println("[signal] engine stopped")
+    })
+
+    // RegisterSpider triggers auto-discovery of Open/Close/Idle/Error hooks
+    app.RegisterSpider(spider)
+    go func() { _ = app.Start(ctx) }()
+    return spider, nil
+}
+```
+
+## spider.go (Lifecycle Hooks \+ Signal Handlers)
+
+```go
+// Auto-discovered lifecycle hooks
 func (s *Spider) Open(ctx context.Context) {
     log.Println("[spider hook] open called")
-    // Schedule a request and a duplicate to trigger OnRequestDropped
+    url := "https://jsonplaceholder.typicode.com/todos/1"
     req1 := s.Request(ctx).Url(url)
     s.Parse(req1, s.parse)
-    req2 := s.Request(ctx).Url(url) // duplicate
+
+    // Schedule a duplicate request to trigger OnRequestDropped
+    req2 := s.Request(ctx).Url(url)
     s.Parse(req2, s.parse)
+}
+
+func (s *Spider) Close(ctx context.Context) {
+    log.Println("[spider hook] close called")
 }
 
 func (s *Spider) Idle(ctx context.Context) {
     log.Println("[spider hook] idle called")
+}
+
+func (s *Spider) Error(ctx context.Context, err error) {
+    log.Printf("[spider hook] error called: %v", err)
+}
+
+// Signal handler methods (wired in base.go)
+func (s *Spider) onItemScraped(ctx context.Context, item *Record) {
+    log.Printf("[spider signal] item scraped: %s", item.Title)
+}
+
+func (s *Spider) onRequestDropped(ctx context.Context, req *core.Request, err error) {
+    log.Printf("[spider signal] request dropped: %s (reason: %v)", req.URL, err)
+}
+
+func (s *Spider) onItemDropped(ctx context.Context, item *Record, err error) {
+    log.Printf("[spider signal] item dropped: %s (reason: %v)", item.Title, err)
 }
 ```
 
