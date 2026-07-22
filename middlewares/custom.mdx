@@ -48,4 +48,6 @@ var MIDDLEWARES = []middlewaremanager.Middleware{
 }
 ```
 
-> \[!IMPORTANT\] Middlewares must be safe for concurrent use. Multiple goroutines will call your middleware simultaneously.
+<Warning>
+  Middlewares must be safe for concurrent use. Multiple goroutines will call your middleware simultaneously.
+</Warning>
