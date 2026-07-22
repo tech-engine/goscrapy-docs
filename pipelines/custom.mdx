@@ -1,0 +1,43 @@
+---
+title: "Custom Pipeline"
+description: "How to build your own custom pipeline"
+---
+
+To build a custom pipeline, implement the `engine.IPipeline` interface:
+
+```go
+type IPipeline[OUT any] interface {
+	Open(context.Context) error
+	ProcessItem(IPipelineItem, core.IOutput[OUT]) error
+	Close()
+}
+```
+
+## Example: Validation Pipeline
+
+If you want to explicitly drop an item (e.g., due to validation failure), return `engine.ErrDropItem` from `ProcessItem`.
+
+```go
+type ValidatePipeline struct{}
+
+func (p *ValidatePipeline) Open(ctx context.Context) error { return nil }
+func (p *ValidatePipeline) Close() {}
+
+func (p *ValidatePipeline) ProcessItem(item engine.IPipelineItem, out core.IOutput[*Record]) error {
+    record := out.Record()
+    if record.Title == "" {
+        // Drop the item silently
+        return engine.ErrDropItem
+    }
+    return nil
+}
+```
+
+Register it in your `settings.go`:
+
+```go
+var PIPELINES = []engine.IPipeline[*Record]{
+	&ValidatePipeline{},
+    export2CSV, // Will only receive valid items
+}
+```

@@ -1,0 +1,36 @@
+---
+title: "Your First Spider"
+description: "How to get your spider up and running quickly"
+---
+
+Building a spider in GoScrapy is fast. The scaffolding provides the structure, you just provide the logic.
+
+## Lifecycle Methods
+
+Your spider automatically connects to the engine if it implements these methods:
+
+- `Open(ctx context.Context)`: Called when the engine starts. Use it to yield your initial requests.
+- `Close(ctx context.Context)`: Called when the engine stops.
+- `Idle(ctx context.Context)`: Called when there is no active work.
+
+## Quick Example
+
+In your `spider.go`:
+
+```go
+func (s *Spider) Open(ctx context.Context) {
+    // 1. Create a request
+    req := s.Request(ctx).Url("https://example.com")
+    
+    // 2. Schedule it with a callback
+    s.Parse(req, s.parse)
+}
+
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+    // 3. Extract data
+    title := resp.Css("title").Text()
+    
+    // 4. Yield the record to pipelines
+    s.Yield(&Record{Title: title})
+}
+```
