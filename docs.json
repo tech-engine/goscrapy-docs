@@ -23,17 +23,40 @@
         "group": "Getting Started",
         "pages": [
           "index",
-          "quickstart"
+          "quickstart",
+          "scaffolding"
         ]
       },
       {
         "group": "Core Concepts",
         "pages": [
           "architecture",
-          "concepts/signals",
           "concepts/declarative-mapping",
-          "concepts/middlewares",
-          "concepts/pipelines"
+          "concepts/spider",
+          "concepts/request-response",
+          "concepts/selectors"
+        ]
+      },
+      {
+        "group": "Middlewares",
+        "pages": [
+          "middlewares/overview",
+          "middlewares/inbuilt",
+          "middlewares/custom"
+        ]
+      },
+      {
+        "group": "Pipelines",
+        "pages": [
+          "pipelines/overview",
+          "pipelines/inbuilt",
+          "pipelines/custom"
+        ]
+      },
+      {
+        "group": "Advanced",
+        "pages": [
+          "concepts/signals"
         ]
       }
     ]

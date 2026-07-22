@@ -1,0 +1,31 @@
+---
+title: "Custom Middleware"
+description: "How to build your own custom middleware"
+---
+
+To build a custom middleware, you must implement the `middlewaremanager.IMiddleware` interface (or just `http.RoundTripper` via `middlewaremanager.MiddlewareFunc`).
+
+## Example
+
+```go
+func LoggingMiddleware(next http.RoundTripper) http.RoundTripper {
+	return middlewaremanager.MiddlewareFunc(func(req *http.Request) (*http.Response, error) {
+		log.Printf("Sending request to %s", req.URL.String())
+		
+		resp, err := next.RoundTrip(req)
+		
+		if resp != nil {
+			log.Printf("Received response status: %d", resp.StatusCode)
+		}
+		return resp, err
+	})
+}
+```
+
+Register it in your `settings.go`:
+
+```go
+var MIDDLEWARES = []middlewaremanager.Middleware{
+	LoggingMiddleware,
+}
+```

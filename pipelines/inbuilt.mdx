@@ -1,0 +1,28 @@
+---
+title: "Inbuilt Pipelines"
+description: "Using GoScrapy's built-in pipelines"
+---
+
+GoScrapy supports multiple export destinations out of the box. Configure them in `settings.go`.
+
+## CSV Pipeline
+
+Exports records to a CSV file. It automatically marshals the struct tags defined in your `record.go`.
+
+```go
+export2CSV := csv.New[*Record](csv.Options{
+	Filename: "output.csv",
+})
+```
+
+## JSON Pipeline
+
+Exports records to a JSON file or stream.
+
+```go
+export2JSON := json.New[*Record](json.Options{
+	Filename: "output.json",
+})
+```
+
+GoScrapy also includes builtin pipelines for **MongoDB**, **Google Sheets**, and **Firebase**.

@@ -3,11 +3,13 @@ title: "Declarative Mapping"
 description: "Extract data automatically using Struct Tags"
 ---
 
-Stop writing boilerplate extraction code. **Gosm** is GoScrapy's declarative mapping engine that lets you define your data model using struct tags. It automatically traverses nested JSON, CSS, and XPath selectors to populate your records.
+Writing imperative code to manually parse deeply nested HTML elements can quickly become a painful and unmaintainable mess. **Gosm** is GoScrapy's declarative mapping engine that saves you from this headache by letting you define your data model using struct tags.
+
+It automatically traverses nested JSON arrays, CSS, and XPath selectors to populate your records in a single line of code.
 
 ## The Power of Gosm
 
-Whether you're dealing with deeply nested JSON arrays or complex HTML structures, Gosm handles the heavy lifting recursively.
+Whether you're dealing with deeply nested structures or complex HTML, Gosm handles the heavy lifting recursively.
 
 ```go
 type Record struct {
@@ -22,7 +24,7 @@ type Record struct {
     ImageURL string   `gos_css:"img.thumbnail@src" json:"image_url" csv:"image_url"`
     Link     string   `gos_xpath:"//a[@class='title']@href" json:"link" csv:"link"`
     
-    // Recursive mapping for nested structures
+    // Recursive mapping for nested structures without imperative code
     Authors  []Author `gos:"authors" json:"authors" csv:"authors"` 
 }
  
