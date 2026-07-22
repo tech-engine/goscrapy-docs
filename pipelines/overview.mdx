@@ -3,13 +3,31 @@ title: "Overview"
 description: "Understanding Pipelines in GoScrapy"
 ---
 
-Pipelines are responsible for processing and exporting the items yielded by your spiders.
+Pipelines process and export the items yielded by your spider. When you call `s.Yield(record)`, the engine pushes the record into the Pipeline Manager, which passes it through all configured pipelines **sequentially in the order they appear** in `settings.go`.
 
-When you call `s.Yield(record)`, the engine pushes the record into the Pipeline Manager, which passes it through all configured pipelines sequentially.
+## The `IPipeline` Interface
 
-Pipelines are typically used for:
+Every pipeline must implement these three methods:
 
-- Cleansing HTML data.
-- Validating scraped data (checking that the items contain certain fields).
-- Checking for duplicates (and dropping them).
-- Storing the scraped item in a database, file, or cloud storage.
+```go
+type IPipeline[OUT any] interface {
+    Open(context.Context) error
+    ProcessItem(IPipelineItem, core.IOutput[OUT]) error
+    Close()
+}
+```
+
+| Method | Called when... | Use for... |
+| :-- | :-- | :-- |
+| `Open(ctx)` | Engine starts | Opening file handles, connecting to databases. |
+| `ProcessItem(item, out)` | Each yielded record | Validating, transforming, or exporting data. |
+| `Close()` | Engine stops | Closing files, flushing buffers, disconnecting. |
+
+## Common Use Cases
+
+- **Exporting** scraped data to CSV, JSON, MongoDB, Google Sheets, or Firebase.
+- **Validating** records and dropping incomplete ones.
+- **Deduplicating** items before export.
+- **Enriching** records with additional computed fields.
+
+> \[!IMPORTANT\] `ProcessItem` is called **concurrently** by multiple goroutines. Your pipeline implementation must be thread-safe (use `sync.Mutex` or channels if writing to shared state).

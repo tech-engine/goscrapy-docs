@@ -1,54 +1,86 @@
 ---
-title: "Your First Spider"
-description: "How to get your spider up and running quickly"
+title: "Writing Spiders"
+description: "Your spider.go is where all the action happens"
 ---
 
-You will spend most of your time in `spider.go` as this is where the entire scraping logic lives. Building a spider in GoScrapy is fast and straightforward.
+`spider.go` is where you will invest most of your time. This file contains the entire scraping logic: seeding initial requests, parsing responses, extracting data, following links, and yielding records to the pipeline.
 
 ## Triggering the Spider
 
-There are two primary ways to kick off your scraping process:
+There are two primary ways to kick off your scraping process.
 
-### 1. Directly from `main.go`
+### Option 1: Direct Call from `main.go`
 
-This is the most common pattern for simple scripts or when you need to pass specific job arguments (like CLI flags).
+This is the most common pattern. You define a `StartRequests` method on your spider and call it explicitly from `main.go`. This gives you full control over when and how the spider starts, and lets you pass in job arguments or CLI flags.
 
 ```go
-// In main.go
-spider, _ := my_project.New(ctx)
-spider.StartRequests(ctx)
-spider.Wait(true)
-
 // In spider.go
 func (s *Spider) StartRequests(ctx context.Context) {
     s.Parse(s.Request(ctx).Url(s.baseUrl), s.parse)
 }
 ```
 
-### 2. Using Lifecycle Methods
+```go
+// In main.go
+spider, _ := my_project.New(ctx)
+spider.StartRequests(ctx)
+spider.Wait(true)
+```
 
-Your spider automatically connects to the engine if it implements these methods.
+### Option 2: Lifecycle Hooks (Auto-Discovery)
 
-- `Open(ctx context.Context)`: Called when the engine starts. Perfect for yielding initial requests automatically.
-- `Close(ctx context.Context)`: Called when the engine stops.
-- `Idle(ctx context.Context)`: Called when there is no active work.
+If your spider implements any of these methods, the engine calls them automatically when registered via `app.RegisterSpider(spider)`:
 
-<Accordion title="Advanced: The 'parse' method">
-  The `parse` method (or whatever you name your callback) is where you process the `IResponseReader`.
+| Hook | Called when... |
+| :-- | :-- |
+| `Open(ctx)` | Engine starts. Ideal for seeding initial requests. |
+| `Close(ctx)` | Engine stops. Cleanup logic goes here. |
+| `Idle(ctx)` | Spider has no active work. |
+| `Error(ctx, err)` | An unhandled error occurs. |
 
-  ```go
-  func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
-      // 1. Extract data (using selectors or Gosm)
-      var record Record
-      gosm.Map(resp, &record)
-      
-      // 2. Yield the record to the pipelines
-      s.Yield(&record)
-      
-      // 3. Follow pagination
-      for _, nextUrl := range resp.Css("li.next a").Attr("href") {
-          s.Parse(s.Request(ctx).Url(nextUrl), s.parse)
-      }
-  }
-  ```
+```go
+func (s *Spider) Open(ctx context.Context) {
+    req := s.Request(ctx).Url(s.baseUrl)
+    s.Parse(req, s.parse)
+}
+```
+
+## The Parse Callback
+
+The parse callback is where you process each response. It receives a `context.Context` and an `IResponseReader`.
+
+```go
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+    // 1. Log the response
+    s.Logger().Infof("GET: %d %s", resp.StatusCode(), resp.Request().URL.String())
+
+    // 2. Extract data using Gosm or selectors
+    var list Listing
+    _ = gosm.Map(resp, &list)
+
+    // 3. Follow detail links
+    for _, url := range list.ProductLinks {
+        s.Parse(s.Request(ctx).Url(url), s.parseProduct)
+    }
+
+    // 4. Follow pagination
+    if list.NextPage != "" {
+        s.Parse(s.Request(ctx).Url(list.NextPage), s.parse)
+    }
+}
+
+func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
+    record := &Record{}
+    _ = gosm.Map(resp, record)
+    s.Yield(record)
+}
+```
+
+<Accordion title="Key methods available on your spider">
+  | Method | Description |
+  | :-- | :-- |
+  | `s.Request(ctx)` | Creates a new `core.Request` with a fluent API. |
+  | `s.Parse(req, callback)` | Schedules a request and routes its response to a callback. |
+  | `s.Yield(record)` | Sends a record to the pipeline manager for processing and export. |
+  | `s.Logger()` | Returns the spider's logger instance. |
 </Accordion>

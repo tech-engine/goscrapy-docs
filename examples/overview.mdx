@@ -3,28 +3,38 @@ title: "Example Projects"
 description: "Learn GoScrapy through real-world examples"
 ---
 
-GoScrapy comes with several fully functional example projects located in the `_examples` directory of the repository. These examples demonstrate various features and use-cases.
+GoScrapy ships with fully functional example projects in the `_examples/` directory. Each one demonstrates a specific feature or use-case.
 
-### 1. Standard Extraction
+<CardGroup cols={2}>
+  <Card title="Books to Scrape" icon="book" href="/examples/books-to-scrape">
+    Standard HTML extraction with CSS selectors, pagination, and Gosm.
+  </Card>
 
-- **`books.toscrape.com`**: The quintessential scraping example. Demonstrates pagination, CSS/XPath extraction, and basic pipeline usage.
+  <Card title="JSON API Scraping" icon="code" href="/examples/json-api">
+    Parsing JSON API responses with `json.Unmarshal` and `resp.Bytes()`.
+  </Card>
 
-### 2. Advanced Handling
+  <Card title="Fingerprint Spoofing" icon="shield" href="/examples/fingerprint-spoofing">
+    Bypass bot detection using the Azure TLS middleware.
+  </Card>
 
-- **`scrapejsp` & `scrapejsp_method2`**: Demonstrates how to handle JS-heavy or JSP pages that require maintaining complex session state or simulating XHR requests.
-- **`fingerprint_spoofing`**: Shows how to use the Azure TLS middleware to bypass advanced bot protection and WAFs.
+  <Card title="Google Finance" icon="chart-line" href="/examples/google-finance">
+    Reverse-engineering Google's RPC API to extract stock data.
+  </Card>
 
-### 3. Real-World Targets
+  <Card title="Google Maps" icon="map" href="/examples/google-maps">
+    Scraping location data, reviews, and ratings from Google Maps.
+  </Card>
 
-- **`google_finance`**: Extracts stock data and metrics.
-- **`google_maps_scraper`**: Extracts location data, reviews, and ratings.
+  <Card title="Signals" icon="bell" href="/examples/signals">
+    Wiring event listeners for monitoring, alerting, and metrics.
+  </Card>
 
-### 4. Architecture & Scale
+  <Card title="Distributed Scraping" icon="server" href="/examples/distributed">
+    Scaling GoScrapy horizontally with the `Open()` lifecycle hook.
+  </Card>
 
-- **`distributed_scraping`**: Demonstrates how to scale GoScrapy horizontally using message queues or external schedulers.
-- **`use_signals`**: Shows how to wire up event listeners for metrics, alerting, or graceful shutdowns.
-
-### 5. Tooling
-
-- **`tuner`**: Examples on performance tuning and tweaking the Worker Pool.
-- **`with_tui_stats`**: Demonstrates how to integrate GoScrapy's telemetry with Bubble Tea for a beautiful Terminal UI.
+  <Card title="TUI Dashboard" icon="terminal" href="/examples/tui-dashboard">
+    Integrating telemetry with a real-time Bubble Tea terminal UI.
+  </Card>
+</CardGroup>

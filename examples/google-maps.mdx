@@ -1,0 +1,53 @@
+---
+title: "Google Maps"
+description: "Scraping location data and reviews from Google Maps"
+---
+
+This example scrapes Google Maps search results, including geocoding, business listings, reviews, and ratings.
+
+**Key concepts demonstrated:**
+
+- Multi-step scraping flow (geocode → search → paginate)
+- Job-based spider triggering (`StartRequest(ctx, job)`)
+- Cursor-based pagination
+- Extracting data from raw bytes (`resp.Bytes()`)
+
+## Spider Logic
+
+```go
+func (s *Spider) StartRequest(ctx context.Context, job *Job) {
+    if job.loc == nil {
+        // Step 1: Geocode the query first
+        req := prepareRequest(s.Request(ctx), generateGeocodingUrl("https://www.google.com", *job), *job)
+        s.Parse(req, s.parseGeocoding)
+        return
+    }
+    // Step 2: Search with known location
+    req := prepareRequest(s.Request(ctx), generateSearchUrl("https://www.google.com", *job), *job)
+    s.Parse(req, s.parseMapListing)
+}
+
+func (s *Spider) parseMapListing(ctx context.Context, resp core.IResponseReader) {
+    job, ok := getJob(resp)
+    if !ok || resp.StatusCode() != 200 {
+        return
+    }
+
+    records := ExtractMapResults(resp.Bytes())
+    for _, record := range records {
+        s.Yield(&record)
+    }
+
+    // Cursor-based pagination
+    job.SetCursor(job.cursor + 20)
+    req := prepareRequest(s.Request(ctx), generateSearchUrl("https://www.google.com", job), job)
+    s.Parse(req, s.parseMapListing)
+}
+```
+
+## Running
+
+```bash
+cd _examples/google_maps_scraper
+go run main.go
+```

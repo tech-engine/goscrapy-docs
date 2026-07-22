@@ -3,29 +3,59 @@ title: "Custom Middleware"
 description: "How to build your own custom middleware"
 ---
 
-To build a custom middleware, you must implement the `middlewaremanager.IMiddleware` interface (or just `http.RoundTripper` via `middlewaremanager.MiddlewareFunc`).
+A middleware in GoScrapy is a function that wraps an `http.RoundTripper`. You can scaffold one using the CLI, or write it manually.
 
-## Example
+## Scaffolding
+
+GoScrapy currently provides a CLI command to scaffold custom **pipelines**:
+
+```bash
+goscrapy pipeline my_pipeline
+```
+
+For middlewares, you create them manually by implementing the `http.RoundTripper` wrapper pattern.
+
+## Writing a Custom Middleware
+
+Use `middlewaremanager.MiddlewareFunc` to wrap your logic:
 
 ```go
+package middlewares
+
+import (
+    "log"
+    "net/http"
+    "github.com/tech-engine/goscrapy/pkg/middlewaremanager"
+)
+
 func LoggingMiddleware(next http.RoundTripper) http.RoundTripper {
-	return middlewaremanager.MiddlewareFunc(func(req *http.Request) (*http.Response, error) {
-		log.Printf("Sending request to %s", req.URL.String())
-		
-		resp, err := next.RoundTrip(req)
-		
-		if resp != nil {
-			log.Printf("Received response status: %d", resp.StatusCode)
-		}
-		return resp, err
-	})
+    return middlewaremanager.MiddlewareFunc(func(req *http.Request) (*http.Response, error) {
+        // Pre-request: modify or inspect the request
+        log.Printf(">> %s %s", req.Method, req.URL.String())
+
+        // Pass to next middleware in the chain
+        resp, err := next.RoundTrip(req)
+
+        // Post-response: inspect or modify the response
+        if resp != nil {
+            log.Printf("<< %d %s", resp.StatusCode, req.URL.String())
+        }
+        return resp, err
+    })
 }
 ```
 
-Register it in your `settings.go`:
+## Registering Your Middleware
+
+Add it to the `MIDDLEWARES` slice in your `settings.go`:
 
 ```go
 var MIDDLEWARES = []middlewaremanager.Middleware{
-	LoggingMiddleware,
+    LoggingMiddleware,       // your custom middleware
+    middlewares.Retry(),     // built-in retry
+    middlewares.MultiCookieJar, // built-in cookie management
+    middlewares.DupeFilter(),   // built-in duplicate filter
 }
 ```
+
+> \[!IMPORTANT\] Middlewares must be safe for concurrent use. Multiple goroutines will call your middleware simultaneously.

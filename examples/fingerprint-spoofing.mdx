@@ -1,0 +1,50 @@
+---
+title: "Fingerprint Spoofing"
+description: "Bypass bot detection with Azure TLS middleware"
+---
+
+This example demonstrates how to use the `AzureTLS` middleware to spoof TLS fingerprints and bypass advanced bot protection mechanisms like Cloudflare, Akamai, or Imperva.
+
+**Key concepts demonstrated:**
+
+- Per-request TLS configuration via context
+- Proxy support through `AzureTLSOptions`
+- Browser fingerprint emulation (Firefox, Chrome)
+
+## Settings
+
+```go
+// In settings.go
+var azureTLSOpts = &middlewares.AzureTLSOptions{
+    Browser: "firefox",
+}
+
+var MIDDLEWARES = []middlewaremanager.Middleware{
+    middlewares.Retry(),
+    // Disable MultiCookieJar when using AzureTLS (it handles cookies)
+    middlewares.AzureTLS(azureTLSOpts),
+    middlewares.DupeFilter(),
+}
+```
+
+## Per-Request Override
+
+You can override TLS options per-request using context:
+
+```go
+func (s *Spider) Open(ctx context.Context) {
+    ctx = middlewares.WithAzureTLSOptions(ctx, &middlewares.AzureTLSOptions{
+        Browser: middlewares.BrowserFirefox,
+        Proxy:   "http://user:pass@myproxy.com:8080",
+    })
+    req := s.Request(ctx).Url("https://tls.peet.ws/api/all")
+    s.Parse(req, s.parse)
+}
+```
+
+## Running
+
+```bash
+cd _examples/fingerprint_spoofing
+go run main.go
+```

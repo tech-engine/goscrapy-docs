@@ -1,0 +1,47 @@
+---
+title: "Distributed Scraping"
+description: "Scaling GoScrapy horizontally"
+---
+
+This example demonstrates a distributed scraping pattern using GoScrapy's `Open()` lifecycle hook and external scheduling.
+
+**Key concepts demonstrated:**
+
+- Using `Open()` to seed requests automatically
+- Parallel CSS extraction of titles and prices
+- Pagination with `resp.Css("li.next a").Attr("href")`
+
+## Spider Logic
+
+```go
+func (s *Spider) Open(ctx context.Context) {
+    s.Logger().Info("Spider opened, seeding initial request...")
+    req := s.Request(ctx).Url(s.baseUrl)
+    s.Parse(req, s.parse)
+}
+
+func (s *Spider) parse(ctx context.Context, resp core.IResponseReader) {
+    titles := resp.Css("article.product_pod h3 a").Attr("title")
+    prices := resp.Css("article.product_pod .price_color").Text()
+
+    for i := 0; i < len(titles) && i < len(prices); i++ {
+        s.Yield(&Record{
+            Title: titles[i],
+            Price: prices[i],
+        })
+    }
+
+    // Pagination
+    for _, nextUrl := range resp.Css("li.next a").Attr("href") {
+        fullUrl := fmt.Sprintf("https://books.toscrape.com/catalogue/%s", nextUrl)
+        s.Parse(s.Request(ctx).Url(fullUrl), s.parse)
+    }
+}
+```
+
+## Running
+
+```bash
+cd _examples/distributed_scraping
+go run main.go
+```

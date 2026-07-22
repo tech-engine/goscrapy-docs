@@ -5,14 +5,74 @@ description: "Understand the generated files and their purpose"
 
 When you run `goscrapy startproject <project_name>`, GoScrapy generates a structured boilerplate designed for maintainability and scale.
 
-Here are the files created and their purpose, mirroring a standard project (like our `books.toscrape.com` example):
+## Directory Structure
 
-- **`main.go`**: The entry point. Initializes the spider, sets up the context, and runs it (e.g. `spider.StartRequests(ctx)`).
-- **`base.go`**: Engine setup. It hides the boilerplate of wiring the Engine, Scheduler, and Worker Pool together.
-- **`constants.go`**: Central place for URLs, configurations, or API keys.
-- **`errors.go`**: Utility file for structured error handling.
-- **`job.go`**: Utilities for job-specific configurations, tracking IDs, and state.
-- **`record.go`**: Defines your data model (structs). **Crucially, the struct tags defined here (`gos`, `gos_css`, `gos_xpath`, `csv`, `json`) are necessary not only for automatic extraction but also for exporting data when using pipelines.**
-- **`settings.go`**: Centralized configuration. Defines your pipelines (e.g., CSV, JSON) and middlewares (e.g., Retry, Dupefilter).
-- **`spider.go`**: Contains your core parsing logic (`Open`, `Close`, `parse`). This is where you spend most of your time building the actual scraping rules.
-- **`pipelines/`**: A directory for any custom pipelines you build for this specific project.
+```text
+<project_name>/
+├── main.go                  # Entry point
+└── <project_name>/          # Spider package
+    ├── base.go              # Engine wiring
+    ├── spider.go            # Your scraping logic
+    ├── record.go            # Data model (struct tags matter!)
+    ├── settings.go          # Middlewares & Pipelines config
+    ├── job.go               # Job tracking
+    ├── constants.go         # Shared constants
+    ├── errors.go            # Error definitions
+    └── pipelines/           # Custom pipelines directory
+```
+
+## File Breakdown
+
+### `main.go`
+
+The entry point. Initializes the spider, creates a context, calls `StartRequests()`, and waits for the engine to complete.
+
+```go
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    spider, err := my_scraper.New(ctx)
+    // ... error handling
+
+    spider.StartRequests(ctx)
+
+    if err := spider.Wait(true); err != nil {
+        // handle error
+    }
+}
+```
+
+### `base.go`
+
+Engine setup. Wires together `gos.New()`, middlewares, pipelines, and registers your spider. You rarely need to modify this beyond adding signal handlers.
+
+### `spider.go`
+
+This is where you spend most of your time. Contains your parsing callbacks, pagination logic, and data extraction. See [Writing Spiders](/guides/writing-spiders) for details.
+
+### `record.go`
+
+Defines your data model as a Go struct.
+
+> \[!IMPORTANT\] The struct tags on your `Record` (`json`, `csv`, `gos_css`, `gos_xpath`) are **essential** for two things: automatic extraction via Gosm, and exporting data through pipelines (CSV, JSON, etc.). Without proper `json`/`csv` tags, your pipeline exports will be empty.
+
+### `settings.go`
+
+Centralized configuration for middlewares, pipelines, and engine tuning. All environment-variable-based settings (timeouts, retry counts, worker pool size) are defined here.
+
+### `job.go`
+
+Defines the `Job` struct used for tracking scrape sessions. Each job has a unique ID. You can extend this with custom fields.
+
+### `constants.go` & `errors.go`
+
+Utility files for shared constants (URLs, selectors) and structured error definitions.
+
+### `pipelines/`
+
+A directory for your custom pipelines. You can scaffold one quickly using:
+
+```bash
+goscrapy pipeline my_custom_pipeline
+```

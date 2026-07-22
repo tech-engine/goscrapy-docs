@@ -1,0 +1,46 @@
+---
+title: "TUI Dashboard"
+description: "Real-time terminal UI with Bubble Tea"
+---
+
+This example integrates GoScrapy's telemetry system with a Bubble Tea-based terminal UI, providing a real-time dashboard showing scraping metrics.
+
+**Key concepts demonstrated:**
+
+- Imperative CSS extraction (without Gosm) for full control
+- Scoping selectors with `resp.Css("article.product_page")`
+- Safe extraction pattern (checking slice length before access)
+
+## Spider Logic (Imperative Extraction)
+
+This example intentionally uses imperative selectors (instead of Gosm) to demonstrate the full selector API:
+
+```go
+func (s *Spider) parseProduct(ctx context.Context, resp core.IResponseReader) {
+    product := resp.Css("article.product_page")
+
+    var title string
+    if titles := product.Css(".product_main h1").Text(); len(titles) > 0 {
+        title = titles[0]
+    }
+
+    var price string
+    if prices := product.Css(".price_color").Text(); len(prices) > 0 {
+        price = prices[0]
+    }
+
+    var rating string
+    if attrs := product.Css(".star-rating").Attr("class"); len(attrs) > 0 {
+        rating = strings.Split(attrs[0], " ")[1]
+    }
+
+    s.Yield(&Record{Title: title, Price: price, Rating: rating})
+}
+```
+
+## Running
+
+```bash
+cd _examples/with_tui_stats
+go run main.go
+```

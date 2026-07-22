@@ -24,14 +24,14 @@
         "pages": [
           "index",
           "quickstart",
-          "scaffolding"
+          "scaffolding",
+          "concepts/spider"
         ]
       },
       {
         "group": "Core Concepts",
         "pages": [
           "architecture",
-          "concepts/spider",
           "concepts/request-response",
           "concepts/selectors",
           "concepts/declarative-mapping"
@@ -62,7 +62,15 @@
       {
         "group": "Examples",
         "pages": [
-          "examples/overview"
+          "examples/overview",
+          "examples/books-to-scrape",
+          "examples/json-api",
+          "examples/fingerprint-spoofing",
+          "examples/google-finance",
+          "examples/google-maps",
+          "examples/signals",
+          "examples/distributed",
+          "examples/tui-dashboard"
         ]
       }
     ]
