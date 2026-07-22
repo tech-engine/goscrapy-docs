@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "willow",
   "name": "GoScrapy",
   "colors": {
     "primary": "#2563EB",
@@ -80,7 +80,12 @@
     "dark": "/logo/dark.svg"
   },
   "navbar": {
-    "links": [],
+    "links": [
+      {
+        "href": "https://github.com/tech-engine/goscrapy",
+        "label": "Github"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Discord",
