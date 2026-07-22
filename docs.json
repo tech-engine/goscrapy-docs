@@ -113,5 +113,18 @@
   "description": "GoScrapy is high performance yet lightweight webscraping framework in go bringing the experience of python's Scrapy in go.",
   "background": {
     "decoration": "windows"
+  },
+  "seo": {
+    "metatags": {
+      "og:title": "GoScrapy - High-Performance Web Scraping Framework in Go",
+      "og:description": "A fast, concurrent, and scalable web scraping framework for Go. Extract structured data effortlessly with CSS selectors, XPath, and declarative mapping.",
+      "og:type": "website",
+      "og:url": "https://goscrapy.com",
+      "og:image": "https://goscrapy.com/logo/light.svg",
+      "keywords": "go, golang, scraping, web scraper, crawler, framework, scrapy alternative, data extraction, spider",
+      "author": "Tech Engine",
+      "canonical": "https://goscrapy.com",
+      "theme": "#2563EB"
+    }
   }
 }
