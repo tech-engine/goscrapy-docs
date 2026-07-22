@@ -1,6 +1,6 @@
 ---
-title: "Distributed Scraping"
-description: "Scaling GoScrapy horizontally"
+title: "Distributed scraping with a Redis task queue"
+description: "Scale GoScrapy horizontally across instances by implementing a custom scheduler.ITaskQueue backed by Redis to replace the in-memory scheduler."
 ---
 
 This example demonstrates how to distribute GoScrapy's workload across multiple instances using a custom Redis-backed task queue that replaces the default in-memory scheduler.

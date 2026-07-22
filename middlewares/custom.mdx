@@ -1,6 +1,6 @@
 ---
-title: "Custom Middleware"
-description: "How to build your own custom middleware"
+title: "Building a custom GoScrapy middleware"
+description: "Write a custom middleware by wrapping http.RoundTripper with MiddlewareFunc to modify GoScrapy requests and responses before or after the HTTP adapter."
 ---
 
 A middleware in GoScrapy is a function that wraps an `http.RoundTripper`. You create them manually by implementing the wrapper pattern.

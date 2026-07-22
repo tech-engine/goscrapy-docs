@@ -1,6 +1,6 @@
 ---
-title: "Overview"
-description: "Understanding Pipelines in GoScrapy"
+title: "Pipelines overview and the IPipeline interface"
+description: "How GoScrapy pipelines process and export records yielded by spiders, running sequentially in the order configured in settings.go."
 ---
 
 Pipelines process and export the items yielded by your spider. When you call `s.Yield(record)`, the engine pushes the record into the Pipeline Manager, which passes it through all configured pipelines **sequentially in the order they appear** in `settings.go`.
