@@ -55,7 +55,9 @@ This is where you spend most of your time. Contains your parsing callbacks, pagi
 
 Defines your data model as a Go struct.
 
-> \[!IMPORTANT\] The struct tags on your `Record` (`json`, `csv`, `gos_css`, `gos_xpath`) are **essential** for two things: automatic extraction via Gosm, and exporting data through pipelines (CSV, JSON, etc.). Without proper `json`/`csv` tags, your pipeline exports will be empty.
+<Warning>
+  The struct tags on your `Record` (`json`, `csv`, `gos_css`, `gos_xpath`) are **essential** for two things: automatic extraction via Gosm, and exporting data through pipelines (CSV, JSON, etc.). Without proper `json`/`csv` tags, your pipeline exports will be empty.
+</Warning>
 
 ### `settings.go`
 

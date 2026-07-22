@@ -39,7 +39,9 @@ req := s.Request(ctx).
 req.CookieJar("session1")
 ```
 
-> \[!NOTE\] If you don't set a `CookieJar` key, it defaults to `""` (empty string). This means all requests without a specific key share a **single global default cookie jar**, maintaining session state automatically across your entire spider.
+<Note>
+  If you don't set a `CookieJar` key, it defaults to `""` (empty string). This means all requests without a specific key share a **single global default cookie jar**, maintaining session state automatically across your entire spider.
+</Note>
 
 ---
 

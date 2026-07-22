@@ -26,7 +26,9 @@ sequenceDiagram
     M1-->>W: Response
 ```
 
-> \[!NOTE\] Middlewares are executed in **reverse order** from bottom to top as listed in `settings.go`. The last middleware in the list is the closest to the HTTP Adapter.
+<Note>
+  Middlewares are executed in **reverse order** from bottom to top as listed in `settings.go`. The last middleware in the list is the closest to the HTTP Adapter.
+</Note>
 
 ## Common Use Cases
 

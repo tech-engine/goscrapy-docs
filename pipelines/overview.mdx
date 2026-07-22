@@ -30,4 +30,6 @@ type IPipeline[OUT any] interface {
 - **Deduplicating** items before export.
 - **Enriching** records with additional computed fields.
 
-> \[!IMPORTANT\] `ProcessItem` is called **concurrently** by multiple goroutines. Your pipeline implementation must be thread-safe (use `sync.Mutex` or channels if writing to shared state).
+<Warning>
+  `ProcessItem` is called **concurrently** by multiple goroutines. Your pipeline implementation must be thread-safe (use `sync.Mutex` or channels if writing to shared state).
+</Warning>
