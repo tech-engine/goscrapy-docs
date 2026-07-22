@@ -5,12 +5,14 @@ description: "Understand the generated files and their purpose"
 
 When you run `goscrapy startproject <project_name>`, GoScrapy generates a structured boilerplate designed for maintainability and scale.
 
-Here are the files created and their purpose:
+Here are the files created and their purpose, mirroring a standard project (like our `books.toscrape.com` example):
 
-- **`main.go`**: The entry point. Initializes the spider and runs it.
-- **`settings.go`**: Centralized configuration. Defines your pipelines (e.g., CSV, JSON) and middlewares (e.g., Retry, Dupefilter).
+- **`main.go`**: The entry point. Initializes the spider, sets up the context, and runs it (e.g. `spider.StartRequests(ctx)`).
 - **`base.go`**: Engine setup. It hides the boilerplate of wiring the Engine, Scheduler, and Worker Pool together.
-- **`spider.go`**: Contains your core parsing logic (`Open`, `Close`, `parse`). This is where you spend most of your time.
-- **`record.go`**: Defines your data model (structs). **Crucially, the struct tags defined here are necessary not only for automatic extraction but also for exporting data when using pipelines.**
-- **`job.go`** & **`errors.go`**: Utility files for custom job configurations and error handling.
-- **`constants.go`**: Central place for URLs, selectors, or API keys.
+- **`constants.go`**: Central place for URLs, configurations, or API keys.
+- **`errors.go`**: Utility file for structured error handling.
+- **`job.go`**: Utilities for job-specific configurations, tracking IDs, and state.
+- **`record.go`**: Defines your data model (structs). **Crucially, the struct tags defined here (`gos`, `gos_css`, `gos_xpath`, `csv`, `json`) are necessary not only for automatic extraction but also for exporting data when using pipelines.**
+- **`settings.go`**: Centralized configuration. Defines your pipelines (e.g., CSV, JSON) and middlewares (e.g., Retry, Dupefilter).
+- **`spider.go`**: Contains your core parsing logic (`Open`, `Close`, `parse`). This is where you spend most of your time building the actual scraping rules.
+- **`pipelines/`**: A directory for any custom pipelines you build for this specific project.

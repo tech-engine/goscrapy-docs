@@ -13,6 +13,12 @@ type IPipeline[OUT any] interface {
 }
 ```
 
+### Pipeline Methods
+
+- **`Open(ctx)`**: Called when the engine starts. Ideal for opening files or connecting to databases.
+- **`ProcessItem(item, out)`**: Called for every yielded record. Contains the core logic. **Must be thread-safe** as it is called concurrently.
+- **`Close()`**: Called when the engine stops. Ideal for closing files/connections.
+
 ## Example: Validation Pipeline
 
 If you want to explicitly drop an item (e.g., due to validation failure), return `engine.ErrDropItem` from `ProcessItem`.

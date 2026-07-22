@@ -1,0 +1,48 @@
+---
+title: "signals"
+description: "Event-driven architecture using a central signal bus"
+---
+
+GoScrapy uses a central signal bus to decouple various components and provide hooks for custom logic. You can connect to these signals to monitor the engine, track item progress, or handle errors.
+
+## Wiring Signals
+
+Signals are typically wired in your `main.go` right after initializing the engine via `gos.New()`. They use a fluent builder pattern, providing compile-time safety and IDE auto-completion.
+
+```go
+func main() {
+    ctx := context.Background()
+    
+    // 1. Initialize the app
+    app, _ := gos.New[*MyRecord]()
+     
+    // 2. Wire up signals
+    app.OnEngineStarted(func(ctx context.Context) {
+        log.Println("engine started")
+    }).
+    OnItemScraped(func(ctx context.Context, item *MyRecord) {
+        log.Printf("item scraped: %s", item.Title)
+    }).
+    OnSpiderError(func(ctx context.Context, err error) {
+        log.Printf("spider error: %v", err)
+    })
+    
+    // 3. Start spider...
+}
+```
+
+## Supported Signals
+
+| Category | Signal | Triggered when... |
+| :-- | :-- | :-- |
+| **Engine** | `EngineStarted` | The engine has finished initialization and is starting. |
+|  | `EngineStopped` | The engine has finished all work and completed its shutdown. |
+| **Spider** | `SpiderOpened` | A spider is registered and ready to begin. |
+|  | `SpiderClosed` | A spider has finished all its tasks. |
+|  | `SpiderError` | A spider encounters an unhandled error. |
+| **Item** | `ItemScraped` | An item has successfully passed through all configured pipelines. |
+|  | `ItemDropped` | An item was explicitly dropped by a pipeline using `engine.ErrDropItem`. |
+|  | `ItemError` | A pipeline returned a non-nil error while processing an item. |
+| **Request** | `RequestScheduled` | A new request has been added to the scheduler. |
+|  | `RequestDropped` | A request was dropped due to a full queue or other limitations. |
+|  | `RequestError` | A request failed during execution (e.g., network timeout). |

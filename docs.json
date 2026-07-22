@@ -58,6 +58,12 @@
         "pages": [
           "concepts/signals"
         ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/overview"
+        ]
       }
     ]
   },

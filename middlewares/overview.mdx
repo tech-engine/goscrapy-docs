@@ -3,7 +3,21 @@ title: "Overview"
 description: "Understanding Middlewares in GoScrapy"
 ---
 
-Middlewares provide a way to inject custom logic into the request/response lifecycle. They sit between the Engine and the HTTP Adapter.
+Middlewares provide a way to inject custom logic into the request/response lifecycle. They sit right between the Worker Pool (execution layer) and the HTTP Adapter (network layer).
+
+```mermaid
+sequenceDiagram
+    participant Worker as Worker Pool
+    participant Mid as Middlewares
+    participant Net as HTTP Adapter
+
+    Worker->>Mid: 1. ProcessRequest()
+    Note over Mid: Add headers, check cache,<br/>manage cookies, spoof TLS
+    Mid->>Net: 2. Execute HTTP Request
+    Net-->>Mid: 3. Return HTTP Response
+    Note over Mid: Handle retries,<br/>check status codes
+    Mid-->>Worker: 4. ProcessResponse()
+```
 
 Middlewares can:
 
