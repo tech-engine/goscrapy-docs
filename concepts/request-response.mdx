@@ -22,7 +22,7 @@ req := s.Request(ctx).
 | Method | Description |
 | :-- | :-- |
 | `Url(u)` | Set the target URL. Accepts a `string` or `*url.URL`. |
-| `Method(m)` | Set the HTTP method (`GET`, `POST`, etc). Default: `GET`. |
+| `Method(m)` | Set the HTTP method (`GET`, `POST`, etc.). Default: `GET`. |
 | `Body(b)` | Set the request body. Accepts `string`, `[]byte`, `io.Reader`, or `io.ReadCloser`. |
 | `AddHeader(k, v)` | Append a header value to a key. |
 | `SetHeader(k, v)` | Set a header value, replacing any existing value for that key. |
