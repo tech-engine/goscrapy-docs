@@ -94,8 +94,6 @@
   },
   "contextual": {
     "options": [
-      "copy",
-      "view",
       "chatgpt",
       "claude",
       "perplexity",
@@ -125,6 +123,14 @@
       "author": "Tech Engine",
       "canonical": "https://goscrapy.com",
       "theme-color": "#2563EB"
+    }
+  },
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "aurora-x"
+      }
     }
   }
 }
