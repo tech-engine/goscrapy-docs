@@ -97,15 +97,13 @@
   },
   "contextual": {
     "options": [
-      "copy",
-      "view",
       "chatgpt",
       "claude",
-      "perplexity",
       "mcp",
       "cursor",
       "vscode"
-    ]
+    ],
+    "display": "toc"
   },
   "footer": {
     "socials": {
@@ -131,6 +129,11 @@
     }
   },
   "styling": {
-    "codeblocks": "dark"
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "aurora-x"
+      }
+    }
   }
 }
