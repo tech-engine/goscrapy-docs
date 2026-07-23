@@ -56,7 +56,8 @@
       {
         "group": "Advanced",
         "pages": [
-          "concepts/signals"
+          "concepts/signals",
+          "advanced/telemetry"
         ]
       },
       {

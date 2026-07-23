@@ -1,0 +1,194 @@
+---
+title: "Telemetry System"
+description: "Building custom metric collectors and observers"
+---
+
+GoScrapy's telemetry system uses a decoupled, three-layer architecture to enable high-performance metric collection without blocking the crawler's hot-path.
+
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    %% Collection Layer
+    subgraph Collection ["Collection Layer (Non-Blocking)"]
+        direction LR
+        SM["Stats Middleware"]
+        SCH["Scheduler"]
+        WP["Worker Pool"]
+        PM["Pipeline Manager"]
+    end
+
+    %% Aggregation Layer
+    subgraph Aggregation ["Aggregation Layer (Periodic)"]
+        Hub["Telemetry Hub"]
+    end
+
+    %% Exhibition Layer
+    subgraph Exhibition ["Exhibition Layer (Broadcast)"]
+        Obs["Observers (TUI/Logs)"]
+    end
+
+    %% Connections
+    SM -.->|"Snapshot()"| Hub
+    SCH -.->|"Snapshot()"| Hub
+    WP -.->|"Snapshot()"| Hub
+    PM -.->|"Snapshot()"| Hub
+    Hub -->|"GlobalSnapshot"| Obs
+
+    style Collection fill:#FFDFD3,stroke:#E27D60,stroke-width:2px
+    style Aggregation fill:#B5D4F4,stroke:#185FA5,stroke-width:2px
+    style Exhibition fill:#C0DD97,stroke:#3B6D11,stroke-width:2px
+```
+
+### Component Roles
+
+- **`TelemetryHub`**: The central brain. It wakes up at a fixed interval (default 500ms), asks all collectors for a snapshot, and broadcasts a `GlobalSnapshot` to all observers.
+- **`IStatsCollector`**: Components that gather metrics silently in the background (like counting HTTP requests or scraped items).
+- **`IStatsObserver`**: Components that listen to the `TelemetryHub` and display or export the metrics (like a dashboard, JSON logger, or Prometheus).
+- **`GlobalSnapshot`**: A read-only snapshot containing the current timestamp, uptime, and the data from all collectors.
+
+---
+
+## 1. Creating a Custom Collector
+
+A Collector is responsible for gathering metrics during execution. It must implement `IStatsCollector`, which requires two methods:
+
+1. `Name() string`: Identifies the component in the GlobalSnapshot.
+2. `Snapshot() ts.ComponentSnapshot`: Returns the current metrics state safely.
+
+Here is an example of a **Custom Item Pipeline** that also acts as a Collector. It counts how many items are successfully saved.
+
+```go
+package my_spider
+
+import (
+    "sync"
+    "github.com/tech-engine/goscrapy/pkg/core"
+    "github.com/tech-engine/goscrapy/pkg/engine"
+    ts "github.com/tech-engine/goscrapy/pkg/telemetry/stats"
+)
+
+// 1. Define your metrics payload
+type ItemStats struct {
+    SavedItems uint64
+}
+
+// 2. Create the component that implements IStatsCollector
+type MetricsPipeline struct {
+    mu         sync.Mutex
+    savedCount uint64
+}
+
+// Satisfy IPipeline: Process an item and increment the counter safely
+func (p *MetricsPipeline) ProcessItem(pi engine.IPipelineItem, out core.IOutput[*Record]) error {
+    record := pi.GetItem().(*Record)
+    
+    // ... logic to save record to Database ...
+
+    p.mu.Lock()
+    p.savedCount++
+    p.mu.Unlock()
+
+    return nil
+}
+
+// Implement IStatsCollector: Provide a name
+func (p *MetricsPipeline) Name() string {
+    return "DatabasePipeline"
+}
+
+// Implement IStatsCollector: Return a safe snapshot of the metrics
+func (p *MetricsPipeline) Snapshot() ts.ComponentSnapshot {
+    p.mu.Lock()
+    defer p.mu.Unlock()
+    
+    return ItemStats{
+        SavedItems: p.savedCount,
+    }
+}
+
+// Pipeline boilerplate
+func (p *MetricsPipeline) Open(ctx context.Context) error { return nil }
+func (p *MetricsPipeline) Close() {}
+```
+
+---
+
+## 2. Creating a Custom Observer
+
+An Observer listens for updates. It must implement `IStatsObserver`, requiring one method:
+
+1. `OnSnapshot(snap ts.GlobalSnapshot)`: Receives the latest metrics. This function **must not block**, otherwise it will slow down the Hub.
+
+Here is a simple **Generic JSON Logger** that receives the metrics and logs them as JSON.
+
+```go
+package my_spider
+
+import (
+    "encoding/json"
+    "fmt"
+    ts "github.com/tech-engine/goscrapy/pkg/telemetry/stats"
+)
+
+// Create the component that implements IStatsObserver
+type JsonLoggerObserver struct {}
+
+// Receives the broadcast every interval (e.g. 500ms)
+func (j *JsonLoggerObserver) OnSnapshot(snap ts.GlobalSnapshot) {
+    // 1. Extract our specific collector's payload by Name
+    if compSnap, exists := snap.Components["DatabasePipeline"]; exists {
+        
+        // 2. Type-cast back to our struct
+        if stats, ok := compSnap.(ItemStats); ok {
+            
+            // 3. Format as JSON
+            data := map[string]interface{}{
+                "timestamp":   snap.Timestamp.Format("2006-01-02T15:04:05Z07:00"),
+                "uptime_sec":  snap.Uptime.Seconds(),
+                "saved_items": stats.SavedItems,
+            }
+            
+            jsonBytes, _ := json.Marshal(data)
+            fmt.Println(string(jsonBytes))
+        }
+    }
+}
+```
+
+---
+
+## 3. Wiring It Together
+
+Now we inject both our Custom Pipeline (Collector) and JSON Logger (Observer) into the engine during startup.
+
+```go
+func New(ctx context.Context) (*Spider, error) {
+    app, err := gos.New[*Record]()
+    if err != nil {
+        return nil, err
+    }
+
+    // Initialize our components
+    dbPipeline := &MetricsPipeline{}
+    jsonLogger := &JsonLoggerObserver{}
+
+    // 1. Setup the Telemetry Hub
+    hub := ts.NewTelemetryHub(nil) // nil uses default 500ms interval
+    
+    // 2. Register the Collector
+    hub.AddCollector(dbPipeline)
+    
+    // 3. Register the Observer
+    hub.AddObserver(jsonLogger)
+
+    // 4. Attach the Pipeline and Hub to the Engine
+    app.WithPipelines(dbPipeline).
+        WithTelemetry(hub, nil)
+
+    spider := &Spider{ICoreSpider: app}
+    app.RegisterSpider(spider)
+
+    return spider, nil
+}
+```
