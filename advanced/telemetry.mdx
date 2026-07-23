@@ -62,7 +62,7 @@ Here is an example of a **Custom Item Pipeline** that also acts as a Collector. 
 package my_spider
 
 import (
-    "sync"
+    "sync/atomic"
     "github.com/tech-engine/goscrapy/pkg/core"
     "github.com/tech-engine/goscrapy/pkg/engine"
     ts "github.com/tech-engine/goscrapy/pkg/telemetry/stats"
@@ -75,8 +75,7 @@ type ItemStats struct {
 
 // 2. Create the component that implements IStatsCollector
 type MetricsPipeline struct {
-    mu         sync.Mutex
-    savedCount uint64
+    savedCount atomic.Uint64
 }
 
 // Satisfy IPipeline: Process an item and increment the counter safely
@@ -85,9 +84,7 @@ func (p *MetricsPipeline) ProcessItem(pi engine.IPipelineItem, out core.IOutput[
     
     // ... logic to save record to Database ...
 
-    p.mu.Lock()
-    p.savedCount++
-    p.mu.Unlock()
+    p.savedCount.Add(1)
 
     return nil
 }
@@ -99,11 +96,8 @@ func (p *MetricsPipeline) Name() string {
 
 // Implement IStatsCollector: Return a safe snapshot of the metrics
 func (p *MetricsPipeline) Snapshot() ts.ComponentSnapshot {
-    p.mu.Lock()
-    defer p.mu.Unlock()
-    
     return ItemStats{
-        SavedItems: p.savedCount,
+        SavedItems: p.savedCount.Load(),
     }
 }
 
