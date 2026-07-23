@@ -58,7 +58,7 @@ A Collector is responsible for gathering metrics during execution. It must imple
 
 Here is an example of a **Custom Item Pipeline** that also acts as a Collector. It counts how many items are successfully saved.
 
-```go
+```go pipeline.go expandable
 package my_spider
 
 import (
@@ -122,7 +122,7 @@ An Observer listens for updates. It must implement `IStatsObserver`, requiring o
 
 Here is a simple **Generic JSON Logger** that receives the metrics and logs them as JSON.
 
-```go
+```go logger.go expandable
 package my_spider
 
 import (
@@ -162,7 +162,7 @@ func (j *JsonLoggerObserver) OnSnapshot(snap ts.GlobalSnapshot) {
 
 Now we inject both our Custom Pipeline (Collector) and JSON Logger (Observer) into the engine during startup.
 
-```go
+```go base.go expandable
 func New(ctx context.Context) (*Spider, error) {
     app, err := gos.New[*Record]()
     if err != nil {
