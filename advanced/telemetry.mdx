@@ -42,10 +42,37 @@ flowchart TD
 
 ### Component Roles
 
-- **`TelemetryHub`**: The central brain. It wakes up at a fixed interval (default 500ms), asks all collectors for a snapshot, and broadcasts a `GlobalSnapshot` to all observers.
-- **`IStatsCollector`**: Components that gather metrics silently in the background (like counting HTTP requests or scraped items).
-- **`IStatsObserver`**: Components that listen to the `TelemetryHub` and display or export the metrics (like a dashboard, JSON logger, or Prometheus).
-- **`GlobalSnapshot`**: A read-only snapshot containing the current timestamp, uptime, and the data from all collectors.
+**1. `TelemetryHub` (The Conductor)**
+The Hub is the central engine of the telemetry system. It runs in its own background goroutine and uses a simple timer (ticker) that wakes up at a fixed interval (default: 500ms). When it wakes up, it quietly asks all registered Collectors for their latest data, packages that data into a single `GlobalSnapshot`, and sends it to all Observers. Because it runs independently, it never slows down your actual scraping tasks.
+
+**2. `IStatsCollector` (The Sensors)**
+Collectors are the components doing the actual work (like Middlewares, Pipelines, or the Engine itself) that also secretly gather metrics on the side. For example, a collector might count how many HTTP requests were made or how many items were saved to a database. When the Hub asks for data, the Collector instantly returns a read-only copy (`ComponentSnapshot`) of its current numbers.
+
+**3. `IStatsObserver` (The Display / Exporter)**
+Observers are the consumers of the data. They sit and wait for the Hub to hand them a `GlobalSnapshot` every 500ms. An Observer could be a Terminal UI (like the TUI dashboard) that updates progress bars, a JSON Logger that prints to the console, or an exporter that pushes the metrics to an external service like Prometheus or Datadog. Observers receive data passively—they don't have to ask for it.
+
+**4. `GlobalSnapshot` (The Payload)**
+This is the package of data that the Hub creates and hands to the Observers. It is completely read-only, meaning Observers can safely read it without worrying about race conditions. It contains:
+- `Timestamp`: The exact time the snapshot was taken.
+- `Uptime`: How long the spider has been running.
+- `Components`: A map containing the individual `ComponentSnapshot` payloads from every registered Collector.
+
+```json
+{
+  "Timestamp": "2026-07-23T20:10:07+05:30",
+  "Uptime": 120500000000,
+  "Interval": 500000000,
+  "Components": {
+    "HttpStats": {
+      "RequestsSent": 150,
+      "ResponsesReceived": 145
+    },
+    "DatabasePipeline": {
+      "SavedItems": 140
+    }
+  }
+}
+```
 
 ---
 
